@@ -262,10 +262,20 @@
 
                 document.getElementById('infoUsuarioActual').innerText = `${datosUsuarioLogueado.rol}: ${datosUsuarioLogueado.nombre}`;
                 document.getElementById('infoUsuarioActual').classList.remove('hidden');
-                document.getElementById('btnCandado').classList.remove('hidden');
                 document.getElementById('btnSalir').classList.remove('hidden');
                 document.getElementById('sec-login').classList.add('hidden');
                 document.getElementById('menuNavegacion').classList.remove('hidden');
+
+                // LÓGICA DE PERMISOS PARA EL MONITOR
+                if (datosUsuarioLogueado.rol === "Monitor") {
+                    document.getElementById('btnCandado').classList.add('hidden');
+                    document.getElementById('tab-historial').classList.add('hidden');
+                    document.getElementById('tab-resumen').classList.add('hidden');
+                } else {
+                    document.getElementById('btnCandado').classList.remove('hidden');
+                    document.getElementById('tab-historial').classList.remove('hidden');
+                    document.getElementById('tab-resumen').classList.remove('hidden');
+                }
                 
                 cargarGradosDisponibles();
                 mostrarSeccion('asistencia');
@@ -339,6 +349,12 @@
         };
 
         window.mostrarSeccion = (seccion) => {
+            // PROTECCIÓN EXTRA DE NAVEGACIÓN PARA EL MONITOR
+            if (datosUsuarioLogueado && datosUsuarioLogueado.rol === "Monitor" && seccion !== "asistencia") {
+                alert("Acceso denegado: Los monitores solo tienen permisos para tomar asistencia.");
+                return;
+            }
+
             ['asistencia', 'historial', 'resumen', 'admin'].forEach(sec => {
                 const elSec = document.getElementById(`sec-${sec}`);
                 const elTab = document.getElementById(`tab-${sec}`);
