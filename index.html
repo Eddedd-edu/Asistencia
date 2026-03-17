@@ -22,29 +22,51 @@
         <header class="bg-indigo-700 text-white p-6 rounded-b-3xl shadow-md flex-shrink-0 z-10 flex justify-between items-start">
             <div>
                 <h1 class="text-2xl font-extrabold tracking-tight">Asistencia Escolar</h1>
-                <p class="text-indigo-100 font-medium opacity-90">I.E.T. San José - Fresno</p>
+                <p class="text-indigo-100 font-medium opacity-90 text-sm">I.E.T. San José - Fresno</p>
+                <p id="infoUsuarioActual" class="hidden text-xs text-emerald-300 font-bold mt-2 uppercase"></p>
             </div>
-            <button onclick="pedirPasswordAdmin()" class="bg-indigo-800 p-2 rounded-full hover:bg-indigo-900 transition-colors" aria-label="Acceso Administrador">
-                🔒
-            </button>
+            <div class="flex flex-col gap-2 items-end">
+                <button onclick="pedirPasswordAdmin()" id="btnCandado" class="hidden bg-indigo-800 p-2 rounded-full hover:bg-indigo-900 transition-colors" aria-label="Acceso Administrador">
+                    🔒
+                </button>
+                <button onclick="cerrarSesion()" id="btnSalir" class="hidden text-[10px] bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded font-bold uppercase transition-colors">
+                    Salir
+                </button>
+            </div>
         </header>
 
-        <nav class="flex border-b border-slate-200 bg-white/80 backdrop-blur-md z-20 flex-shrink-0" id="menuNavegacion">
-            <button onclick="mostrarSeccion('asistencia')" class="flex-1 py-4 text-xs sm:text-sm font-bold border-b-4 border-indigo-600 text-indigo-700 transition-colors" id="tab-asistencia">
-                Lista
-            </button>
-            <button onclick="mostrarSeccion('historial')" class="flex-1 py-4 text-xs sm:text-sm font-bold border-b-4 border-transparent text-slate-500 hover:text-slate-700 transition-colors" id="tab-historial">
-                Historial
-            </button>
-            <button onclick="mostrarSeccion('resumen')" class="flex-1 py-4 text-xs sm:text-sm font-bold border-b-4 border-transparent text-slate-500 hover:text-slate-700 transition-colors" id="tab-resumen">
-                Resumen
-            </button>
-            <button onclick="mostrarSeccion('admin')" class="hidden flex-1 py-4 text-xs sm:text-sm font-bold border-b-4 border-transparent text-slate-500 hover:text-slate-700 transition-colors" id="tab-admin">
-                ⚙️ Admin
-            </button>
+        <section id="sec-login" class="flex-grow flex flex-col justify-center p-8 space-y-6 fade-in bg-white">
+            <div class="text-center mb-4">
+                <div class="bg-indigo-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span class="text-3xl">👨‍🏫</span>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800">Iniciar Sesión</h2>
+                <p class="text-sm text-slate-500 mt-1">Ingresa para tomar asistencia</p>
+            </div>
+            
+            <form id="loginForm" onsubmit="iniciarSesion(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Correo Electrónico</label>
+                    <input type="email" id="loginEmail" required class="w-full border rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Contraseña</label>
+                    <input type="password" id="loginPass" required class="w-full border rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
+                </div>
+                <button type="submit" id="btnLogin" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-[0.98] mt-4">
+                    Ingresar
+                </button>
+            </form>
+        </section>
+
+        <nav class="hidden flex border-b border-slate-200 bg-white/80 backdrop-blur-md z-20 flex-shrink-0" id="menuNavegacion">
+            <button onclick="mostrarSeccion('asistencia')" class="flex-1 py-4 text-xs sm:text-sm font-bold border-b-4 border-indigo-600 text-indigo-700 transition-colors" id="tab-asistencia">Lista</button>
+            <button onclick="mostrarSeccion('historial')" class="flex-1 py-4 text-xs sm:text-sm font-bold border-b-4 border-transparent text-slate-500 hover:text-slate-700 transition-colors" id="tab-historial">Historial</button>
+            <button onclick="mostrarSeccion('resumen')" class="flex-1 py-4 text-xs sm:text-sm font-bold border-b-4 border-transparent text-slate-500 hover:text-slate-700 transition-colors" id="tab-resumen">Resumen</button>
+            <button onclick="mostrarSeccion('admin')" class="hidden flex-1 py-4 text-xs sm:text-sm font-bold border-b-4 border-transparent text-slate-500 hover:text-slate-700 transition-colors" id="tab-admin">⚙️</button>
         </nav>
 
-        <section id="sec-asistencia" class="flex-grow flex flex-col overflow-hidden p-5 space-y-5 fade-in">
+        <section id="sec-asistencia" class="hidden flex-grow flex flex-col overflow-hidden p-5 space-y-5 fade-in bg-slate-50">
             <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex-shrink-0">
                 <label for="selectorGrado" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Seleccionar Grupo:</label>
                 <select id="selectorGrado" onchange="cambiarGrupo()" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-indigo-900 outline-none border border-slate-200 focus:border-indigo-500 transition-all appearance-none cursor-pointer">
@@ -73,9 +95,9 @@
             </div>
         </section>
 
-        <section id="sec-historial" class="hidden flex-grow flex flex-col overflow-hidden p-5 space-y-4 fade-in">
+        <section id="sec-historial" class="hidden flex-grow flex flex-col overflow-hidden p-5 space-y-4 fade-in bg-slate-50">
             <div class="flex justify-between items-center flex-shrink-0 mb-2">
-                <h2 class="text-xl font-bold text-slate-800">Reportes Diarios</h2>
+                <h2 class="text-xl font-bold text-slate-800">Últimos 7 Días</h2>
                 <button onclick="cargarHistorial()" class="text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-indigo-100 transition-colors">
                     🔄 Actualizar
                 </button>
@@ -91,32 +113,43 @@
                 </div>
         </section>
 
-        <section id="sec-resumen" class="hidden flex-grow flex flex-col overflow-hidden p-5 space-y-4 fade-in">
+        <section id="sec-resumen" class="hidden flex-grow flex flex-col overflow-hidden p-5 space-y-4 fade-in bg-slate-50">
             <div class="flex justify-between items-center flex-shrink-0 mb-2">
-                <h2 class="text-xl font-bold text-slate-800">Consolidado por Estudiante</h2>
+                <h2 class="text-xl font-bold text-slate-800">Consolidado Estudiantil</h2>
             </div>
-
             <div class="flex-shrink-0 mb-2">
                 <select id="filtroGradoResumen" onchange="cargarResumen()" class="w-full p-2 bg-white rounded-lg text-sm font-semibold text-slate-700 border border-slate-200 focus:border-indigo-500 outline-none cursor-pointer shadow-sm">
                     <option value="">-- Selecciona un grado --</option>
                 </select>
             </div>
-            
             <div id="listaResumen" class="flex-grow overflow-y-auto space-y-3 pr-2 custom-scroll pb-4">
-                <p class="text-center text-slate-400 text-sm py-10">Selecciona un grado para ver las inasistencias por estudiante.</p>
+                <p class="text-center text-slate-400 text-sm py-10">Selecciona un grado para ver las estadísticas.</p>
             </div>
         </section>
 
         <section id="sec-admin" class="hidden flex-grow overflow-y-auto p-5 space-y-6 fade-in bg-slate-100">
+            
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                <h2 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">📥 Importar Estudiantes</h2>
-                <p class="text-xs text-slate-500 mb-4">El Excel debe tener las columnas: <b>Last Name</b>, <b>First Name</b>, <b>Grado</b> y opcionalmente <b>Zipgrade</b>.</p>
+                <h2 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">👤 Crear Docente/Monitor</h2>
+                <form id="formCrearUsuario" onsubmit="crearUsuario(event)" class="space-y-3">
+                    <input type="text" id="nuevoNombre" placeholder="Nombre completo" required class="w-full border rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
+                    <input type="email" id="nuevoEmail" placeholder="Correo electrónico" required class="w-full border rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
+                    <input type="password" id="nuevoPass" placeholder="Contraseña (Mín 6 letras)" required minlength="6" class="w-full border rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
+                    <select id="nuevoRol" class="w-full border rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
+                        <option value="Docente">Rol: Docente</option>
+                        <option value="Monitor">Rol: Monitor</option>
+                    </select>
+                    <button type="submit" id="btnCrearUsuario" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm py-3 rounded-xl font-bold transition-colors shadow-md">
+                        Crear Cuenta
+                    </button>
+                </form>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">📥 Importar Excel Estudiantes</h2>
                 <div class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Archivo Excel</label>
-                        <input type="file" id="excelInput" accept=".xlsx, .xls, .csv" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-100 file:text-indigo-700 cursor-pointer"/>
-                    </div>
-                    <button onclick="importarExcel()" id="btnImportar" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm py-3 rounded-xl font-bold transition-colors shadow-md shadow-emerald-200">
+                    <input type="file" id="excelInput" accept=".xlsx, .xls, .csv" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-100 file:text-indigo-700 cursor-pointer"/>
+                    <button onclick="importarExcel()" id="btnImportar" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm py-3 rounded-xl font-bold transition-colors shadow-md">
                         Cargar a Firebase
                     </button>
                 </div>
@@ -133,8 +166,10 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, addDoc, query, where, deleteDoc, doc, serverTimestamp, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, getDocs, addDoc, query, where, deleteDoc, doc, setDoc, getDoc, serverTimestamp, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // CONFIGURACIÓN FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyCm3ApxABTJJdk__pDUYANPkAb2AgbWmbA",
             authDomain: "asistencia-bd65c.firebaseapp.com",
@@ -146,19 +181,128 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getFirestore(app);
         
-        enableIndexedDbPersistence(db).catch(() => {
-            console.warn("Persistencia offline no disponible en este navegador.");
+        // App secundaria para que el Admin pueda crear cuentas sin desloguearse
+        const adminApp = initializeApp(firebaseConfig, "adminApp");
+        const adminAuth = getAuth(adminApp);
+
+        enableIndexedDbPersistence(db).catch(() => {});
+
+        // --- SISTEMA DE CACHÉ (Optimización de Cuotas) ---
+        let cacheGrados = [];
+        let cacheEstudiantes = {}; // Guarda: { "10-01": [lista estudiantes], "11-02": [...] }
+        let datosUsuarioLogueado = null; // Guardará el nombre y rol del que ingresó
+
+        // --- AUTENTICACIÓN ---
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // Usuario autenticado, consultar su nombre en la base de datos
+                const docRef = doc(db, "usuarios", user.uid);
+                const docSnap = await getDoc(docRef);
+                
+                if (docSnap.exists()) {
+                    datosUsuarioLogueado = docSnap.data();
+                    document.getElementById('infoUsuarioActual').innerText = `${datosUsuarioLogueado.rol}: ${datosUsuarioLogueado.nombre}`;
+                } else {
+                    datosUsuarioLogueado = { nombre: user.email, rol: "Usuario" };
+                    document.getElementById('infoUsuarioActual').innerText = user.email;
+                }
+
+                document.getElementById('infoUsuarioActual').classList.remove('hidden');
+                document.getElementById('btnCandado').classList.remove('hidden');
+                document.getElementById('btnSalir').classList.remove('hidden');
+                document.getElementById('sec-login').classList.add('hidden');
+                document.getElementById('menuNavegacion').classList.remove('hidden');
+                
+                cargarGradosDisponibles();
+                mostrarSeccion('asistencia');
+            } else {
+                // No autenticado
+                datosUsuarioLogueado = null;
+                document.getElementById('infoUsuarioActual').classList.add('hidden');
+                document.getElementById('btnCandado').classList.add('hidden');
+                document.getElementById('btnSalir').classList.add('hidden');
+                document.getElementById('menuNavegacion').classList.add('hidden');
+                
+                // Ocultar todo y mostrar login
+                const secciones = ['asistencia', 'historial', 'resumen', 'admin'];
+                secciones.forEach(sec => document.getElementById(`sec-${sec}`).classList.add('hidden'));
+                document.getElementById('sec-login').classList.remove('hidden');
+            }
         });
 
-        window.addEventListener('online', () => {
-            alert("🌐 Conexión a internet restaurada. Sincronizando datos automáticamente...");
-        });
+        window.iniciarSesion = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPass').value;
+            const btn = document.getElementById('btnLogin');
+            
+            btn.innerHTML = "Verificando...";
+            btn.disabled = true;
 
-        // --- NAVEGACIÓN Y AUTENTICACIÓN ---
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch (error) {
+                alert("Error al ingresar: Verifica tu correo o contraseña.");
+                console.error(error);
+            } finally {
+                btn.innerHTML = "Ingresar";
+                btn.disabled = false;
+            }
+        };
+
+        window.cerrarSesion = () => {
+            signOut(auth).then(() => {
+                // Limpiar caché al salir
+                cacheGrados = [];
+                cacheEstudiantes = {};
+            });
+        };
+
+        window.crearUsuario = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('nuevoEmail').value;
+            const pass = document.getElementById('nuevoPass').value;
+            const nombre = document.getElementById('nuevoNombre').value;
+            const rol = document.getElementById('nuevoRol').value;
+            const btn = document.getElementById('btnCrearUsuario');
+
+            btn.innerHTML = "Creando...";
+            btn.disabled = true;
+
+            try {
+                // Creamos el usuario en la app secundaria para no cerrar la sesión actual del director
+                const userCredential = await createUserWithEmailAndPassword(adminAuth, email, pass);
+                const nuevoUsuario = userCredential.user;
+                
+                // Guardamos sus datos (nombre y rol) en la colección "usuarios" de la app principal
+                await setDoc(doc(db, "usuarios", nuevoUsuario.uid), {
+                    nombre: nombre,
+                    email: email,
+                    rol: rol,
+                    fecha_creacion: serverTimestamp()
+                });
+
+                // Cerramos sesión en la app secundaria
+                await signOut(adminAuth);
+
+                alert(`Cuenta de ${rol} creada con éxito para ${nombre}.`);
+                document.getElementById('formCrearUsuario').reset();
+            } catch (error) {
+                alert("Error al crear cuenta. Es posible que el correo ya exista o la clave sea muy corta.");
+                console.error(error);
+            } finally {
+                btn.innerHTML = "Crear Cuenta";
+                btn.disabled = false;
+            }
+        };
+
+        // --- NAVEGACIÓN ---
         window.pedirPasswordAdmin = () => {
-            const password = prompt("🔐 Introduce la contraseña de administrador:");
+            const password = prompt("🔐 Introduce la contraseña maestra de administrador:");
             if (password === "admin123") {
                 document.getElementById('tab-admin').classList.remove('hidden');
                 mostrarSeccion('admin');
@@ -175,8 +319,8 @@
                 
                 if (sec === seccion) {
                     elSec.classList.remove('hidden');
-                    elTab.classList.replace('border-transparent', 'border-indigo-600');
-                    elTab.classList.replace('text-slate-500', 'text-indigo-700');
+                    if(elTab) elTab.classList.replace('border-transparent', 'border-indigo-600');
+                    if(elTab) elTab.classList.replace('text-slate-500', 'text-indigo-700');
                 } else {
                     if (elSec) elSec.classList.add('hidden');
                     if (elTab) {
@@ -189,53 +333,55 @@
             if (seccion === 'resumen') cargarResumen();
         };
 
-        // --- LÓGICA DE ASISTENCIA, EXCUSAS Y LLEGADAS TARDE ---
+        // --- LÓGICA DE ASISTENCIA Y CACHÉ ---
 
         window.toggleEstado = (index) => {
-            const checkboxAsistencia = document.getElementById(`check-${index}`);
-            const containerExcusa = document.getElementById(`excusa-container-${index}`);
-            const containerTarde = document.getElementById(`tarde-container-${index}`);
-            const filaEstudiante = document.getElementById(`row-${index}`);
+            const checkAsistencia = document.getElementById(`check-${index}`);
+            const contExcusa = document.getElementById(`excusa-container-${index}`);
+            const contTarde = document.getElementById(`tarde-container-${index}`);
+            const fila = document.getElementById(`row-${index}`);
             
-            if (!checkboxAsistencia.checked) {
-                containerExcusa.classList.remove('hidden');
-                containerTarde.classList.add('hidden');
+            if (!checkAsistencia.checked) {
+                contExcusa.classList.remove('hidden');
+                contTarde.classList.add('hidden');
                 document.getElementById(`tarde-check-${index}`).checked = false; 
-                
-                filaEstudiante.classList.replace('bg-white', 'bg-red-50');
-                filaEstudiante.classList.replace('border-slate-200', 'border-red-200');
+                fila.classList.replace('bg-white', 'bg-red-50');
+                fila.classList.replace('border-slate-200', 'border-red-200');
             } else {
-                containerExcusa.classList.add('hidden');
-                containerTarde.classList.remove('hidden');
+                contExcusa.classList.add('hidden');
+                contTarde.classList.remove('hidden');
                 document.getElementById(`excusa-check-${index}`).checked = false; 
-                
-                filaEstudiante.classList.replace('bg-red-50', 'bg-white');
-                filaEstudiante.classList.replace('border-red-200', 'border-slate-200');
+                fila.classList.replace('bg-red-50', 'bg-white');
+                fila.classList.replace('border-red-200', 'border-slate-200');
             }
         };
 
         async function cargarGradosDisponibles() {
-            const selectorAsistencia = document.getElementById("selectorGrado");
-            const selectorHistorial = document.getElementById("filtroGradoHistorial");
-            const selectorResumen = document.getElementById("filtroGradoResumen");
-            
+            if (cacheGrados.length > 0) return poblarSelectoresGrados(cacheGrados);
+
             try {
                 const snapshot = await getDocs(collection(db, "estudiantes"));
                 const gradosSet = new Set();
                 snapshot.forEach(doc => gradosSet.add(doc.data().grado));
-                
-                const gradosOrdenados = Array.from(gradosSet).sort();
-                
-                selectorAsistencia.innerHTML = '<option value="">-- Toca para elegir un grado --</option>';
-                selectorHistorial.innerHTML = '<option value="">Todos los grados</option>';
-                selectorResumen.innerHTML = '<option value="">-- Selecciona un grado --</option>';
-                
-                gradosOrdenados.forEach(g => {
-                    selectorAsistencia.innerHTML += `<option value="${g}">${g}</option>`;
-                    selectorHistorial.innerHTML += `<option value="${g}">${g}</option>`;
-                    selectorResumen.innerHTML += `<option value="${g}">${g}</option>`;
-                });
+                cacheGrados = Array.from(gradosSet).sort();
+                poblarSelectoresGrados(cacheGrados);
             } catch (e) { console.error("Error cargando grados:", e); }
+        }
+
+        function poblarSelectoresGrados(grados) {
+            const sAsist = document.getElementById("selectorGrado");
+            const sHist = document.getElementById("filtroGradoHistorial");
+            const sRes = document.getElementById("filtroGradoResumen");
+            
+            sAsist.innerHTML = '<option value="">-- Toca para elegir un grado --</option>';
+            sHist.innerHTML = '<option value="">Todos los grados</option>';
+            sRes.innerHTML = '<option value="">-- Selecciona un grado --</option>';
+            
+            grados.forEach(g => {
+                sAsist.innerHTML += `<option value="${g}">${g}</option>`;
+                sHist.innerHTML += `<option value="${g}">${g}</option>`;
+                sRes.innerHTML += `<option value="${g}">${g}</option>`;
+            });
         }
 
         window.cambiarGrupo = async () => {
@@ -252,6 +398,12 @@
             document.getElementById("tituloGrupo").innerText = `Grupo: ${grado}`;
             document.getElementById("labelBotonGrado").innerText = grado;
             
+            // Usar Caché para evitar descargas innecesarias
+            if (cacheEstudiantes[grado]) {
+                pintarListaEstudiantes(cacheEstudiantes[grado]);
+                return;
+            }
+
             container.innerHTML = `<p class="text-center text-sm py-10 text-indigo-500 font-bold animate-pulse">Cargando...</p>`;
             
             try {
@@ -259,71 +411,66 @@
                 const snapshot = await getDocs(q);
                 let lista = [];
                 snapshot.forEach(d => lista.push(d.data()));
-                
-                // Ordenamiento alfabético automático por el texto guardado (APELLIDOS NOMBRES)
                 lista.sort((a, b) => a.nombre.localeCompare(b.nombre));
-
-                container.innerHTML = "";
-                document.getElementById("contador").innerText = `${lista.length} Alumnos`;
                 
-                if (lista.length === 0) return container.innerHTML = `<p class="text-center text-sm py-10">Vacío.</p>`;
-
-                lista.forEach((est, index) => {
-                    const idCheck = `check-${index}`;
-                    const idExcusa = `excusa-check-${index}`;
-                    const idTarde = `tarde-check-${index}`;
-                    
-                    container.innerHTML += `
-                        <div id="row-${index}" class="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm transition-colors duration-200">
-                            <label for="${idCheck}" class="flex items-center justify-between cursor-pointer">
-                                <span class="font-semibold text-slate-700 text-sm w-3/4 select-none">${est.nombre}</span>
-                                <input type="checkbox" id="${idCheck}" checked class="asistencia-check w-7 h-7 rounded text-indigo-600 focus:ring-indigo-500 accent-indigo-600 cursor-pointer" data-nombre="${est.nombre}" data-grado="${est.grado}" data-index="${index}" onchange="toggleEstado(${index})">
-                            </label>
-                            
-                            <div id="excusa-container-${index}" class="hidden mt-3 pt-3 border-t border-red-100 flex items-center justify-between">
-                                <label for="${idExcusa}" class="text-xs font-bold text-red-600 uppercase cursor-pointer select-none">¿Presenta excusa?</label>
-                                <input type="checkbox" id="${idExcusa}" class="w-5 h-5 rounded border-red-300 text-red-600 focus:ring-red-500 accent-red-600 cursor-pointer">
-                            </div>
-
-                            <div id="tarde-container-${index}" class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
-                                <label for="${idTarde}" class="text-xs font-bold text-orange-500 uppercase cursor-pointer select-none">¿Llegó tarde?</label>
-                                <input type="checkbox" id="${idTarde}" class="w-5 h-5 rounded border-orange-300 text-orange-500 focus:ring-orange-500 accent-orange-500 cursor-pointer">
-                            </div>
-                        </div>`;
-                });
+                // Guardar en caché
+                cacheEstudiantes[grado] = lista;
+                pintarListaEstudiantes(lista);
             } catch (e) { console.error(e); }
+        }
+
+        function pintarListaEstudiantes(lista) {
+            const container = document.getElementById("contenedorEstudiantes");
+            document.getElementById("contador").innerText = `${lista.length} Alumnos`;
+            container.innerHTML = "";
+            
+            if (lista.length === 0) return container.innerHTML = `<p class="text-center text-sm py-10">Vacío.</p>`;
+
+            lista.forEach((est, index) => {
+                const idCheck = `check-${index}`;
+                const idExcusa = `excusa-check-${index}`;
+                const idTarde = `tarde-check-${index}`;
+                
+                container.innerHTML += `
+                    <div id="row-${index}" class="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm transition-colors duration-200">
+                        <label for="${idCheck}" class="flex items-center justify-between cursor-pointer">
+                            <span class="font-semibold text-slate-700 text-sm w-3/4 select-none">${est.nombre}</span>
+                            <input type="checkbox" id="${idCheck}" checked class="asistencia-check w-7 h-7 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer" data-nombre="${est.nombre}" data-grado="${est.grado}" data-index="${index}" onchange="toggleEstado(${index})">
+                        </label>
+                        <div id="excusa-container-${index}" class="hidden mt-3 pt-3 border-t border-red-100 flex items-center justify-between">
+                            <label for="${idExcusa}" class="text-xs font-bold text-red-600 uppercase cursor-pointer">¿Presenta excusa?</label>
+                            <input type="checkbox" id="${idExcusa}" class="w-5 h-5 rounded border-red-300 text-red-600 cursor-pointer">
+                        </div>
+                        <div id="tarde-container-${index}" class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+                            <label for="${idTarde}" class="text-xs font-bold text-orange-500 uppercase cursor-pointer">¿Llegó tarde?</label>
+                            <input type="checkbox" id="${idTarde}" class="w-5 h-5 rounded border-orange-300 text-orange-500 cursor-pointer">
+                        </div>
+                    </div>`;
+            });
         }
 
         window.guardarInasistencias = async () => {
             const checks = document.querySelectorAll(".asistencia-check");
             const gradoActual = document.getElementById("selectorGrado").value;
-            let ausentes = [];
-            let tardanzas = [];
+            let ausentes = [], tardanzas = [];
             
             checks.forEach(c => { 
                 const index = c.dataset.index;
                 if (!c.checked) { 
-                    const checkExcusa = document.getElementById(`excusa-check-${index}`);
-                    const tieneExcusa = checkExcusa && checkExcusa.checked;
-                    let registroFalta = c.dataset.nombre;
-                    if (tieneExcusa) registroFalta += ` (Con excusa)`;
-                    ausentes.push(registroFalta); 
+                    const tieneExcusa = document.getElementById(`excusa-check-${index}`)?.checked;
+                    ausentes.push(tieneExcusa ? `${c.dataset.nombre} (Con excusa)` : c.dataset.nombre); 
                 } else {
-                    const checkTarde = document.getElementById(`tarde-check-${index}`);
-                    if (checkTarde && checkTarde.checked) {
-                        tardanzas.push(c.dataset.nombre);
-                    }
+                    if (document.getElementById(`tarde-check-${index}`)?.checked) tardanzas.push(c.dataset.nombre);
                 }
             });
 
             const btnGuardar = document.getElementById("btnGuardar");
-            const textoOriginal = btnGuardar.innerHTML;
-            btnGuardar.disabled = true;
-            btnGuardar.innerHTML = "Guardando...";
+            btnGuardar.disabled = true; btnGuardar.innerHTML = "Guardando...";
 
             try {
                 const ahora = new Date();
                 const hora = ahora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true });
+                const tomadoPorTexto = datosUsuarioLogueado ? `${datosUsuarioLogueado.nombre} (${datosUsuarioLogueado.rol})` : "Usuario Desconocido";
 
                 await addDoc(collection(db, "reportes_asistencia"), {
                     fecha: serverTimestamp(),
@@ -333,39 +480,38 @@
                     ausentes: ausentes,
                     tardanzas: tardanzas,
                     total: ausentes.length,
-                    total_tardanzas: tardanzas.length
+                    total_tardanzas: tardanzas.length,
+                    tomado_por: tomadoPorTexto // ¡Guardamos quién tomó la lista!
                 });
 
-                if (!navigator.onLine) {
-                    alert("📵 Sin conexión a internet. El reporte se guardó localmente y se subirá cuando te conectes.");
-                } else {
-                    alert("¡Reporte guardado con éxito!");
-                }
-
-                btnGuardar.innerHTML = textoOriginal;
-                btnGuardar.disabled = false;
+                alert(navigator.onLine ? "¡Reporte guardado con éxito!" : "📵 Guardado localmente. Se subirá al tener internet.");
                 document.getElementById("selectorGrado").value = "";
                 cambiarGrupo();
             } catch (error) {
                 alert("Hubo un error al guardar.");
-                btnGuardar.innerHTML = textoOriginal;
-                btnGuardar.disabled = false;
+            } finally {
+                btnGuardar.disabled = false; btnGuardar.innerHTML = "Guardar";
             }
         };
 
-        // --- LÓGICA DEL HISTORIAL ---
+        // --- LÓGICA DEL HISTORIAL (Solo 7 días) ---
 
         window.cargarHistorial = async () => {
             const container = document.getElementById("listaHistorial");
             const gradoFiltro = document.getElementById("filtroGradoHistorial").value;
-            
             container.innerHTML = `<p class="text-center text-sm py-10 text-indigo-500 font-bold animate-pulse">Consultando...</p>`;
             
             try {
-                const snapshot = await getDocs(collection(db, "reportes_asistencia"));
+                // Optimización: Solo consultar los reportes de los últimos 7 días
+                const fechaLimite = new Date();
+                fechaLimite.setDate(fechaLimite.getDate() - 7);
+
+                const q = query(collection(db, "reportes_asistencia"), where("fecha", ">=", fechaLimite));
+                const snapshot = await getDocs(q);
+                
                 let reportes = [];
                 snapshot.forEach(d => reportes.push({ id: d.id, ...d.data() }));
-
+                // Ordenar del más nuevo al más viejo localmente
                 reportes.sort((a, b) => (b.fecha?.seconds || 0) - (a.fecha?.seconds || 0));
 
                 container.innerHTML = "";
@@ -376,70 +522,66 @@
                     
                     reportesMostrados++;
                     const colorBorde = rep.total === 0 ? 'border-l-emerald-500' : 'border-l-rose-500';
-                    const colorEtiqueta = rep.total === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700';
-                    const textoEtiqueta = rep.total === 0 ? 'Asistencia Perfecta' : `${rep.total} Faltas`;
+                    const colorEtiq = rep.total === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700';
+                    const txtEtiq = rep.total === 0 ? 'Perfecta' : `${rep.total} Faltas`;
                     
-                    const listaTexto = rep.ausentes && rep.ausentes.length > 0 ? rep.ausentes.join("\n") : "Ninguna (Todos presentes)";
-                    let listaTardes = rep.tardanzas && rep.tardanzas.length > 0 ? `\n\n*Llegadas tarde:*\n${rep.tardanzas.join("\n")}` : "";
-                    
-                    const textoCopia = listaTexto + listaTardes;
+                    const strAus = rep.ausentes?.length > 0 ? rep.ausentes.join("\n") : "Ninguna (Todos presentes)";
+                    const strTar = rep.tardanzas?.length > 0 ? `\n\n*Llegadas tarde:*\n${rep.tardanzas.join("\n")}` : "";
+                    const tomadoPor = rep.tomado_por || 'Desconocido';
 
                     container.innerHTML += `
                         <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm border-l-4 ${colorBorde}">
                             <div class="flex justify-between items-start mb-2">
                                 <div>
                                     <h3 class="text-base font-bold text-slate-800">${rep.grado}</h3>
-                                    <p class="text-xs text-slate-500 mt-1">${rep.fecha_f} - ${rep.hora_f}</p>
+                                    <p class="text-[10px] text-slate-500 mt-0.5">${rep.fecha_f} - ${rep.hora_f}</p>
+                                    <p class="text-[10px] text-indigo-500 font-bold mt-1">📋 Por: ${tomadoPor}</p>
                                 </div>
                                 <div class="flex flex-col items-end gap-1">
-                                    <span class="text-[10px] ${colorEtiqueta} px-2.5 py-1 rounded-full font-bold uppercase">${textoEtiqueta}</span>
+                                    <span class="text-[10px] ${colorEtiq} px-2.5 py-1 rounded-full font-bold uppercase">${txtEtiq}</span>
                                     ${rep.total_tardanzas > 0 ? `<span class="text-[10px] bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full font-bold uppercase">${rep.total_tardanzas} Tardes</span>` : ''}
                                 </div>
                             </div>
                             <div class="bg-slate-50 rounded-xl p-3 mb-2 text-xs text-slate-600 whitespace-pre-line leading-relaxed">
-                                <b>Ausentes:</b><br>${listaTexto}
+                                <b>Ausentes:</b><br>${strAus}
                                 ${rep.total_tardanzas > 0 ? `<br><br><b>Llegadas Tarde:</b><br>${rep.tardanzas.join("<br>")}` : ''}
                             </div>
-                            <button onclick="copiar('${rep.fecha_f}', '${rep.hora_f}', '${rep.grado}', \`${textoCopia}\`)" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2 rounded-lg">
+                            <button onclick="copiar('${rep.fecha_f}', '${rep.hora_f}', '${rep.grado}', \`${strAus+strTar}\`, '${tomadoPor}')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2 rounded-lg">
                                 Copiar Resumen
                             </button>
                         </div>`;
                 });
 
-                if (reportesMostrados === 0) {
-                    container.innerHTML = `<p class="text-center text-slate-400 text-sm py-10">No hay reportes para mostrar.</p>`;
-                }
+                if (reportesMostrados === 0) container.innerHTML = `<p class="text-center text-slate-400 text-sm py-10">No hay reportes en los últimos 7 días.</p>`;
             } catch (e) { console.error(e); }
         }
 
-        window.copiar = (f, h, g, l) => {
-            const t = `📌 *REPORTE DE ASISTENCIA*\n🏫 Grado: ${g}\n📅 Fecha: ${f}\n🕒 Hora: ${h}\n\n*Ausentes:*\n${l}`;
+        window.copiar = (f, h, g, l, r) => {
+            const t = `📌 *REPORTE ASISTENCIA*\n🏫 Grado: ${g}\n📅 Fecha: ${f}\n🕒 Hora: ${h}\n👩‍🏫 Reporta: ${r}\n\n*Ausentes:*\n${l}`;
             navigator.clipboard.writeText(t).then(() => alert("Reporte copiado."));
         };
 
-        // --- LÓGICA DE RESUMEN INDIVIDUAL ---
+        // --- LÓGICA DE RESUMEN Y ADMIN MANTENIDA IGUAL ---
         window.cargarResumen = async () => {
             const grado = document.getElementById("filtroGradoResumen").value;
             const container = document.getElementById("listaResumen");
             
-            if (!grado) {
-                container.innerHTML = `<p class="text-center text-slate-400 text-sm py-10">Selecciona un grado para ver el resumen.</p>`;
-                return;
-            }
-
-            container.innerHTML = `<p class="text-center text-sm py-10 text-indigo-500 font-bold animate-pulse">Calculando datos de Firebase...</p>`;
+            if (!grado) return container.innerHTML = `<p class="text-center text-slate-400 text-sm py-10">Selecciona un grado.</p>`;
+            container.innerHTML = `<p class="text-center text-sm py-10 text-indigo-500 font-bold animate-pulse">Calculando...</p>`;
 
             try {
-                const qEst = query(collection(db, "estudiantes"), where("grado", "==", grado));
-                const snapEst = await getDocs(qEst);
-                let estudiantes = {};
-                snapEst.forEach(d => {
-                    const data = d.data();
-                    estudiantes[data.nombre] = {
-                        codigo: data.codigo_zipgrade || 'Sin Código',
-                        faltas: 0,
-                        tardanzas: 0
-                    };
+                // Se usa el caché de estudiantes para ahorrar descargas
+                let listaEstudiantes = cacheEstudiantes[grado];
+                if (!listaEstudiantes) {
+                    const snapEst = await getDocs(query(collection(db, "estudiantes"), where("grado", "==", grado)));
+                    listaEstudiantes = [];
+                    snapEst.forEach(d => listaEstudiantes.push(d.data()));
+                    cacheEstudiantes[grado] = listaEstudiantes;
+                }
+
+                let estudiantesStats = {};
+                listaEstudiantes.forEach(data => {
+                    estudiantesStats[data.nombre] = { codigo: data.codigo_zipgrade || '-', faltas: 0, tardanzas: 0 };
                 });
 
                 const qRep = query(collection(db, "reportes_asistencia"), where("grado", "==", grado));
@@ -447,135 +589,91 @@
                 
                 snapRep.forEach(d => {
                     const data = d.data();
-                    if(data.ausentes) {
-                        data.ausentes.forEach(aus => {
-                            const nombreLimpio = aus.replace(" (Con excusa)", "");
-                            if (estudiantes[nombreLimpio]) estudiantes[nombreLimpio].faltas++;
-                        });
-                    }
-                    if(data.tardanzas) {
-                        data.tardanzas.forEach(tar => {
-                            if (estudiantes[tar]) estudiantes[tar].tardanzas++;
-                        });
-                    }
+                    if(data.ausentes) data.ausentes.forEach(aus => {
+                        const n = aus.replace(" (Con excusa)", "");
+                        if (estudiantesStats[n]) estudiantesStats[n].faltas++;
+                    });
+                    if(data.tardanzas) data.tardanzas.forEach(tar => {
+                        if (estudiantesStats[tar]) estudiantesStats[tar].tardanzas++;
+                    });
                 });
 
                 container.innerHTML = "";
-                // Como los nombres se importaron "APELLIDOS NOMBRES", se ordenarán solos alfabéticamente
-                const nombresOrdenados = Object.keys(estudiantes).sort();
-                if (nombresOrdenados.length === 0) {
-                     container.innerHTML = `<p class="text-center text-slate-400 text-sm py-10">No hay estudiantes cargados en este grado.</p>`;
-                     return;
-                }
+                const nombres = Object.keys(estudiantesStats).sort();
+                if (nombres.length === 0) return container.innerHTML = `<p class="text-center text-slate-400 text-sm py-10">Vacío.</p>`;
 
-                nombresOrdenados.forEach(nom => {
-                    const stats = estudiantes[nom];
+                nombres.forEach(nom => {
+                    const st = estudiantesStats[nom];
                     container.innerHTML += `
                         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
                             <div class="w-2/3">
                                 <h4 class="font-bold text-slate-700 text-sm leading-tight">${nom}</h4>
-                                <p class="text-xs text-slate-500 mt-1">Zipgrade: <span class="font-mono bg-indigo-50 px-1.5 py-0.5 rounded text-indigo-700 font-bold">${stats.codigo}</span></p>
+                                <p class="text-xs text-slate-500 mt-1">Zipgrade: <span class="font-mono bg-indigo-50 px-1.5 py-0.5 rounded text-indigo-700 font-bold">${st.codigo}</span></p>
                             </div>
                             <div class="flex gap-4 text-center">
                                 <div>
                                     <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Faltas</p>
-                                    <p class="font-bold text-lg text-red-500 leading-none mt-1">${stats.faltas}</p>
+                                    <p class="font-bold text-lg text-red-500 leading-none mt-1">${st.faltas}</p>
                                 </div>
                                 <div>
                                     <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Tardes</p>
-                                    <p class="font-bold text-lg text-orange-500 leading-none mt-1">${stats.tardanzas}</p>
+                                    <p class="font-bold text-lg text-orange-500 leading-none mt-1">${st.tardanzas}</p>
                                 </div>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 });
-
-            } catch(e) { 
-                console.error(e); 
-                container.innerHTML = `<p class="text-center text-red-500 text-sm py-10">Error al cargar estadísticas.</p>`; 
-            }
+            } catch(e) { console.error(e); }
         };
-
-        // --- LÓGICA DE ADMINISTRADOR ---
 
         window.importarExcel = async () => {
             const fileInput = document.getElementById('excelInput');
-            const btnImportar = document.getElementById('btnImportar');
+            const btn = document.getElementById('btnImportar');
+            if (!fileInput.files[0]) return alert("Selecciona un archivo Excel.");
             
-            if (!fileInput.files[0]) return alert("Por favor, selecciona un archivo Excel para cargar.");
-            
-            btnImportar.disabled = true;
-            btnImportar.innerHTML = "Procesando...";
-
+            btn.disabled = true; btn.innerHTML = "Procesando...";
             try {
                 const data = await fileInput.files[0].arrayBuffer();
                 const workbook = XLSX.read(data);
                 const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                
                 let contador = 0;
+                
                 for (let fila of jsonData) {
-                    // Extraer datos reconociendo distintas formas en las que pueden venir las columnas
-                    let firstName = fila['First Name'] || fila['First name'] || fila.Nombres || fila.Nombre || '';
-                    let lastName = fila['Last Name'] || fila['Last name'] || fila.Apellidos || fila.Apellido || '';
-                    let gradoExcel = fila.Grado || fila.grado || fila.Curso || fila.curso || '';
-                    const zipgrade = fila.Zipgrade || fila.zipgrade || fila['ZipGrade ID'] || fila.Codigo || fila['Código'] || fila.codigo || '';
+                    let fn = fila['First Name'] || fila['First name'] || fila.Nombres || fila.Nombre || '';
+                    let ln = fila['Last Name'] || fila['Last name'] || fila.Apellidos || fila.Apellido || '';
+                    let gr = fila.Grado || fila.grado || fila.Curso || fila.curso || '';
+                    let zip = fila.Zipgrade || fila.zipgrade || fila.Codigo || fila['Código'] || fila.codigo || '';
                     
-                    // Formatear el nombre como: APELLIDOS NOMBRES
-                    let nombreCompleto = '';
-                    if (lastName && firstName) {
-                        nombreCompleto = `${lastName} ${firstName}`;
-                    } else if (lastName) {
-                        nombreCompleto = lastName;
-                    } else if (firstName) {
-                        nombreCompleto = firstName;
-                    } else if (fila.Estudiante) {
-                        nombreCompleto = fila.Estudiante; // Fallback por si la columna se llama solo 'Estudiante'
-                    }
-                    
-                    // Guardar solo si hay un nombre y un grado válido en esa fila del Excel
-                    if (nombreCompleto && gradoExcel) {
+                    let nomCompleto = ln && fn ? `${ln} ${fn}` : (ln || fn || fila.Estudiante);
+                    if (nomCompleto && gr) {
                         await addDoc(collection(db, "estudiantes"), { 
-                            nombre: String(nombreCompleto).trim().toUpperCase(), 
-                            grado: String(gradoExcel).trim().toUpperCase(),
-                            codigo_zipgrade: String(zipgrade).trim()
+                            nombre: String(nomCompleto).trim().toUpperCase(), 
+                            grado: String(gr).trim().toUpperCase(),
+                            codigo_zipgrade: String(zip).trim()
                         });
                         contador++;
                     }
                 }
-                
-                alert(`¡Éxito! Se cargaron ${contador} estudiantes organizados por grado desde el archivo.`);
+                alert(`¡Se cargaron ${contador} estudiantes!`);
+                cacheGrados = []; cacheEstudiantes = {}; // Limpiamos caché
                 cargarGradosDisponibles();
-                fileInput.value = '';
             } catch (error) {
-                console.error(error);
-                alert("Error al leer el archivo Excel. Verifica que el formato sea correcto.");
+                alert("Error al leer el Excel.");
             } finally {
-                btnImportar.disabled = false;
-                btnImportar.innerHTML = "Cargar a Firebase";
+                btn.disabled = false; btn.innerHTML = "Cargar a Firebase"; fileInput.value = '';
             }
         };
 
         window.limpiarBaseDatos = async () => {
-            if(!confirm("⚠️ ¡ADVERTENCIA! ¿Estás seguro de que quieres borrar TODOS los estudiantes? Esta acción no se puede deshacer.")) return;
-            if(!confirm("¿Completamente seguro? Escribe 'admin123' si es así.") !== false) {
-                 const conf = prompt("Escribe la contraseña para confirmar:");
-                 if(conf !== "admin123") return alert("Cancelado.");
-            }
+            if(!confirm("⚠️ ¿Borrar TODOS los estudiantes?")) return;
+            if(prompt("Escribe 'admin123' para confirmar:") !== "admin123") return alert("Cancelado.");
 
             try {
                 const snap = await getDocs(collection(db, "estudiantes"));
-                for (const d of snap.docs) { 
-                    await deleteDoc(doc(db, "estudiantes", d.id)); 
-                }
-                alert("Base de datos limpia correctamente.");
+                for (const d of snap.docs) await deleteDoc(doc(db, "estudiantes", d.id));
+                alert("Base limpia.");
                 location.reload();
-            } catch (error) {
-                alert("Hubo un error al borrar la base de datos.");
-                console.error(error);
-            }
+            } catch (error) { alert("Error al borrar."); }
         };
-
-        window.onload = cargarGradosDisponibles;
     </script>
 </body>
 </html>
