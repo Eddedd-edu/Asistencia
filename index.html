@@ -15,9 +15,13 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="bg-slate-50 font-sans h-screen w-screen overflow-hidden text-slate-800">
+<body class="bg-slate-50 font-sans h-screen w-screen overflow-hidden text-slate-800 relative">
 
-    <main class="max-w-md mx-auto bg-white shadow-2xl h-full flex flex-col relative">
+    <div id="offlineBanner" class="hidden fixed top-0 left-0 w-full bg-red-500 text-white text-xs font-bold text-center py-1.5 z-50 shadow-md fade-in">
+        📵 Sin conexión a internet. Modo offline activado.
+    </div>
+
+    <main class="max-w-md mx-auto bg-white shadow-2xl h-full flex flex-col relative mt-0">
         
         <header class="bg-indigo-700 text-white p-6 rounded-b-3xl shadow-md flex-shrink-0 z-10 flex justify-between items-start">
             <div>
@@ -63,7 +67,7 @@
             <button onclick="pedirPasswordAdmin()" class="hidden flex-1 py-4 text-xs sm:text-sm font-bold border-b-4 border-transparent text-slate-500 hover:text-slate-700 transition-colors" id="tab-admin">⚙️</button>
         </nav>
 
-        <section id="sec-asistencia" class="hidden flex-grow flex flex-col overflow-hidden p-5 space-y-5 fade-in bg-slate-50">
+        <section id="sec-asistencia" class="hidden flex-grow flex flex-col overflow-hidden p-5 space-y-4 fade-in bg-slate-50">
             <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex-shrink-0">
                 <label for="selectorGrado" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Seleccionar Grupo:</label>
                 <select id="selectorGrado" onchange="cambiarGrupo()" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-indigo-900 outline-none border border-slate-200 focus:border-indigo-500 transition-all appearance-none cursor-pointer">
@@ -71,13 +75,16 @@
                 </select>
             </div>
 
-            <div id="areaLista" class="hidden flex-grow flex flex-col overflow-hidden space-y-4">
+            <div id="areaLista" class="hidden flex-grow flex flex-col overflow-hidden space-y-3">
+                <div class="flex-shrink-0">
+                    <input type="text" id="buscadorEstudiantes" oninput="filtrarEstudiantes()" placeholder="🔍 Buscar estudiante por nombre..." class="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500 shadow-sm mb-2 transition-colors">
+                </div>
                 <div class="flex justify-between items-end px-1 flex-shrink-0">
                     <h2 class="text-xl font-bold text-slate-800" id="tituloGrupo">Estudiantes</h2>
                     <span id="contador" class="text-xs bg-indigo-100 px-3 py-1 rounded-full text-indigo-700 font-bold">0 Registrados</span>
                 </div>
                 <div id="contenedorEstudiantes" class="flex-grow overflow-y-auto space-y-3 pr-2 custom-scroll pb-2"></div>
-                <div class="pt-2 pb-4 flex-shrink-0 bg-white">
+                <div class="pt-2 pb-4 flex-shrink-0 bg-slate-50">
                     <button onclick="guardarInasistencias()" id="btnGuardar" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-200 transition-all transform active:scale-[0.98]">
                         <span id="btnGuardarTexto">Guardar</span> <span id="labelBotonGrado"></span>
                     </button>
@@ -91,15 +98,28 @@
 
         <section id="sec-historial" class="hidden flex-grow flex flex-col overflow-hidden p-5 space-y-4 fade-in bg-slate-50">
             <div class="flex justify-between items-center flex-shrink-0 mb-2">
-                <h2 class="text-xl font-bold text-slate-800">Últimos 7 Días</h2>
+                <h2 class="text-xl font-bold text-slate-800">Historial</h2>
                 <button onclick="cargarHistorial()" class="text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-indigo-100 transition-colors">
                     🔄 Actualizar
                 </button>
             </div>
-            <div class="flex-shrink-0 mb-2">
+            <div class="flex flex-col gap-2 flex-shrink-0 mb-2">
                 <select id="filtroGradoHistorial" onchange="cargarHistorialLocamente()" class="w-full p-2 bg-white rounded-lg text-sm font-semibold text-slate-700 border border-slate-200 focus:border-indigo-500 outline-none cursor-pointer shadow-sm">
                     <option value="">Todos los grados</option>
                 </select>
+                <div class="flex gap-2">
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase ml-1">Desde</label>
+                        <input type="date" id="fechaDesde" onchange="cargarHistorialLocamente()" class="w-full p-2 bg-white rounded-lg text-xs font-semibold text-slate-700 border border-slate-200 focus:border-indigo-500 outline-none shadow-sm">
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase ml-1">Hasta</label>
+                        <input type="date" id="fechaHasta" onchange="cargarHistorialLocamente()" class="w-full p-2 bg-white rounded-lg text-xs font-semibold text-slate-700 border border-slate-200 focus:border-indigo-500 outline-none shadow-sm">
+                    </div>
+                </div>
+                <button onclick="exportarExcelHistorial()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-lg text-xs font-bold transition-colors shadow-sm flex items-center justify-center gap-2 mt-1">
+                    <span>📊</span> Exportar a Excel
+                </button>
             </div>
             <div id="listaHistorial" class="flex-grow overflow-y-auto space-y-4 pr-2 custom-scroll pb-4"></div>
         </section>
@@ -168,10 +188,38 @@
 
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx49cMrsuYeMD_k_yz1do7Q0iwoSdtHeJYZaEqQXdiayVpnVeNonIbSnkD2KLtc5mmg/exec"; 
 
+        const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutos
         let cacheGrados = [];
         let cacheEstudiantes = {}; 
         let cacheReportes = [];
         let datosUsuarioLogueado = null; 
+        window.reportesActualesFiltrados = [];
+
+        window.showToast = (msg, type = 'info') => {
+            const toast = document.createElement('div');
+            let bgColor = 'bg-indigo-600';
+            if (type === 'error') bgColor = 'bg-red-600';
+            if (type === 'success') bgColor = 'bg-emerald-600';
+            
+            toast.className = `fixed bottom-5 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full text-white text-sm font-bold shadow-2xl transition-all duration-300 z-[100] ${bgColor} fade-in text-center whitespace-nowrap min-w-[250px]`;
+            toast.innerText = msg;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, 20px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        };
+
+        const checkOfflineStatus = () => {
+            const banner = document.getElementById('offlineBanner');
+            if (navigator.onLine) {
+                banner.classList.add('hidden');
+            } else {
+                banner.classList.remove('hidden');
+            }
+        };
 
         window.formatearGradoReal = (val) => {
             if (!val) return "";
@@ -210,9 +258,10 @@
         };
 
         window.addEventListener('online', async () => {
+            checkOfflineStatus();
             let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
             if (queue.length > 0) {
-                alert("🌐 Conexión restaurada. Sincronizando datos guardados sin conexión...");
+                showToast("🌐 Sincronizando datos guardados sin conexión...", "info");
                 let failedQueue = [];
                 for (let item of queue) {
                     try {
@@ -226,9 +275,12 @@
                     }
                 }
                 localStorage.setItem('offlineQueue', JSON.stringify(failedQueue));
-                if (failedQueue.length === 0) alert("✅ Sincronización completada.");
+                if (failedQueue.length === 0) showToast("✅ Sincronización completada.", "success");
             }
         });
+
+        window.addEventListener('offline', checkOfflineStatus);
+        checkOfflineStatus();
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -256,13 +308,11 @@
                 document.getElementById('sec-login').classList.add('hidden');
                 document.getElementById('menuNavegacion').classList.remove('hidden');
 
-                // LÓGICA DE PERMISOS PARA EL MONITOR Y DOCENTES
                 if (datosUsuarioLogueado.rol === "Monitor") {
                     document.getElementById('tab-historial').classList.add('hidden');
                     document.getElementById('tab-resumen').classList.add('hidden');
                     document.getElementById('tab-admin').classList.add('hidden');
                 } else {
-                    // Docentes pueden ver las pestañas, incluyendo el piñón
                     document.getElementById('tab-historial').classList.remove('hidden');
                     document.getElementById('tab-resumen').classList.remove('hidden');
                     document.getElementById('tab-admin').classList.remove('hidden');
@@ -289,7 +339,7 @@
             try {
                 await signInWithEmailAndPassword(auth, document.getElementById('loginEmail').value, document.getElementById('loginPass').value);
             } catch (error) {
-                alert("Error al ingresar: Verifica tu correo o contraseña.");
+                showToast("Error al ingresar: Verifica tu correo o contraseña.", "error");
             } finally {
                 btn.innerHTML = "Ingresar"; btn.disabled = false;
             }
@@ -300,9 +350,8 @@
         window.crearUsuario = async (e) => {
             e.preventDefault();
             
-            // PRIMER CANDADO: Creación de usuarios
             if (prompt("🔐 Introduce la contraseña maestra para crear cuentas:") !== "admin123") {
-                return alert("Contraseña incorrecta. Acción denegada.");
+                return showToast("Contraseña incorrecta. Acción denegada.", "error");
             }
 
             const email = document.getElementById('nuevoEmail').value;
@@ -327,10 +376,10 @@
                 if (!response.ok) throw new Error("Error en el servidor");
                 
                 await signOut(adminAuth);
-                alert(`Cuenta de ${rol} creada con éxito para ${nombre}.`);
+                showToast(`Cuenta de ${rol} creada con éxito para ${nombre}.`, "success");
                 document.getElementById('formCrearUsuario').reset();
             } catch (error) {
-                alert("Error al crear cuenta o comunicarnos con Google Sheets.");
+                showToast("Error al crear cuenta o comunicarnos con el servidor.", "error");
                 console.error(error);
             } finally {
                 btn.innerHTML = "Crear Cuenta"; btn.disabled = false;
@@ -338,17 +387,16 @@
         };
 
         window.pedirPasswordAdmin = () => {
-            // SEGUNDO CANDADO: Ver la sección de configuración
             if (prompt("🔐 Introduce la contraseña maestra para entrar a la configuración:") === "admin123") {
                 mostrarSeccion('admin');
             } else {
-                alert("Contraseña incorrecta.");
+                showToast("Contraseña incorrecta.", "error");
             }
         };
 
         window.mostrarSeccion = (seccion) => {
             if (datosUsuarioLogueado && datosUsuarioLogueado.rol === "Monitor" && seccion !== "asistencia") {
-                alert("Acceso denegado: Los monitores solo tienen permisos para tomar asistencia.");
+                showToast("Acceso denegado. Permisos limitados.", "error");
                 return;
             }
 
@@ -384,18 +432,22 @@
         };
 
         async function cargarGradosDisponibles() {
-            if (cacheGrados.length > 0) return poblarSelectoresGrados(cacheGrados);
-            
             let listado = [];
+            let usarCache = false;
             
             try {
-                let datosLocales = localStorage.getItem('db_estudiantes');
-                listado = datosLocales ? JSON.parse(datosLocales) : [];
-                if (!Array.isArray(listado)) listado = [];
-            } catch(e) { listado = []; }
+                let cacheDataStr = localStorage.getItem('db_estudiantes_cache');
+                if (cacheDataStr) {
+                    let cacheData = JSON.parse(cacheDataStr);
+                    if (Date.now() - cacheData.timestamp < CACHE_EXPIRY) {
+                        listado = cacheData.data;
+                        usarCache = true;
+                    }
+                }
+            } catch(e) { }
 
-            try {
-                if (navigator.onLine) {
+            if (!usarCache && navigator.onLine) {
+                try {
                     const res = await fetch(`${SCRIPT_URL}?action=getEstudiantes&t=${Date.now()}`);
                     const textData = await res.text();
                     
@@ -408,11 +460,20 @@
                             est.grado = window.formatearGradoReal(est.grado);
                             return est;
                         });
-                        localStorage.setItem('db_estudiantes', JSON.stringify(listado));
+                        localStorage.setItem('db_estudiantes_cache', JSON.stringify({ data: listado, timestamp: Date.now() }));
                     }
+                } catch (e) { 
+                    console.error("Fallo fetch, intentando datos locales", e); 
+                    try {
+                        let bk = localStorage.getItem('db_estudiantes_cache');
+                        if (bk) listado = JSON.parse(bk).data;
+                    } catch(ex) { listado = []; }
                 }
-            } catch (e) { 
-                console.error("Usando estudiantes almacenados localmente", e); 
+            } else if (!usarCache && !navigator.onLine) {
+                try {
+                    let bk = localStorage.getItem('db_estudiantes_cache');
+                    if (bk) listado = JSON.parse(bk).data;
+                } catch(ex) { listado = []; }
             }
             
             cacheEstudiantes = {};
@@ -430,21 +491,26 @@
             }
 
             cacheGrados = Array.from(gradosSet).sort();
-            poblarSelectoresGrados(cacheGrados);
+            if (cacheGrados.length > 0) poblarSelectoresGrados(cacheGrados);
         }
 
         function poblarSelectoresGrados(grados) {
-            const sels = [document.getElementById("selectorGrado"), document.getElementById("filtroGradoHistorial"), document.getElementById("filtroGradoResumen")];
-            sels[0].innerHTML = '<option value="">-- Toca para elegir un grado --</option>';
-            sels[1].innerHTML = '<option value="">Todos los grados</option>';
-            sels[2].innerHTML = '<option value="">-- Selecciona un grado --</option>';
-            grados.forEach(g => sels.forEach(s => s.innerHTML += `<option value="${g}">${g}</option>`));
+            let optionsStr = '';
+            grados.forEach(g => { optionsStr += `<option value="${g}">${g}</option>`; });
+            
+            document.getElementById("selectorGrado").innerHTML = '<option value="">-- Toca para elegir un grado --</option>' + optionsStr;
+            document.getElementById("filtroGradoHistorial").innerHTML = '<option value="">Todos los grados</option>' + optionsStr;
+            document.getElementById("filtroGradoResumen").innerHTML = '<option value="">-- Selecciona un grado --</option>' + optionsStr;
         }
 
         window.cambiarGrupo = async () => {
             const grado = document.getElementById("selectorGrado").value;
             const area = document.getElementById("areaLista");
             const msg = document.getElementById("mensajeVacio");
+            const buscador = document.getElementById("buscadorEstudiantes");
+            
+            buscador.value = ""; 
+
             if (!grado) { 
                 area.classList.add("hidden"); 
                 msg.classList.remove("hidden"); 
@@ -462,12 +528,16 @@
         function pintarListaEstudiantes(lista) {
             const container = document.getElementById("contenedorEstudiantes");
             document.getElementById("contador").innerText = `${lista.length} Alumnos`;
-            container.innerHTML = "";
-            if (lista.length === 0) return container.innerHTML = `<p class="text-center text-sm py-10">Vacío.</p>`;
+            
+            if (lista.length === 0) {
+                container.innerHTML = `<p class="text-center text-sm py-10">Vacío.</p>`;
+                return;
+            }
 
+            let html = "";
             lista.forEach((est, index) => {
-                container.innerHTML += `
-                    <div id="row-${index}" class="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm transition-colors duration-200">
+                html += `
+                    <div id="row-${index}" data-nombre="${est.nombre}" class="student-row p-4 bg-white rounded-2xl border border-slate-200 shadow-sm transition-colors duration-200">
                         <label for="check-${index}" class="flex items-center justify-between cursor-pointer">
                             <span class="font-semibold text-slate-700 text-sm w-3/4 select-none">${est.nombre}</span>
                             <input type="checkbox" id="check-${index}" checked class="asistencia-check w-7 h-7 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer" data-nombre="${est.nombre}" data-grado="${est.grado}" data-index="${index}" onchange="toggleEstado(${index})">
@@ -482,7 +552,21 @@
                         </div>
                     </div>`;
             });
+            container.innerHTML = html;
         }
+
+        window.filtrarEstudiantes = () => {
+            const term = document.getElementById("buscadorEstudiantes").value.toLowerCase();
+            const rows = document.querySelectorAll(".student-row");
+            rows.forEach(row => {
+                const name = row.dataset.nombre.toLowerCase();
+                if (name.includes(term)) {
+                    row.classList.remove("hidden");
+                } else {
+                    row.classList.add("hidden");
+                }
+            });
+        };
 
         window.guardarInasistencias = async () => {
             const checks = document.querySelectorAll(".asistencia-check");
@@ -522,24 +606,24 @@
                     let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
                     queue.push(payload);
                     localStorage.setItem('offlineQueue', JSON.stringify(queue));
-                    alert("📵 Sin conexión a internet. El reporte se guardó localmente.");
+                    showToast("📵 Sin conexión. Guardado localmente.", "info");
                 } else {
                     const response = await fetch(SCRIPT_URL, { 
                         method: 'POST', 
                         body: JSON.stringify(payload) 
                     });
                     if (!response.ok) throw new Error("Fallo en servidor");
-                    alert("¡Reporte guardado con éxito!");
+                    showToast("¡Reporte guardado con éxito!", "success");
                 }
                 
                 cacheReportes.push(payload);
-                localStorage.setItem('db_reportes', JSON.stringify(cacheReportes));
+                localStorage.setItem('db_reportes_cache', JSON.stringify({ data: cacheReportes, timestamp: Date.now() }));
 
             } catch (error) {
                 let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
                 queue.push(payload);
                 localStorage.setItem('offlineQueue', JSON.stringify(queue));
-                alert("Hubo un error de conexión con Google Sheets. El reporte se guardó localmente.");
+                showToast("Error de conexión. Guardado localmente.", "error");
             } finally {
                 document.getElementById("btnGuardarTexto").innerText = "Guardar";
                 btn.disabled = false;
@@ -554,16 +638,20 @@
             const container = document.getElementById("listaHistorial");
             container.innerHTML = `<p class="text-center text-sm py-10 text-indigo-500 font-bold animate-pulse">Consultando...</p>`;
             
+            let usarCache = false;
             try {
-                let datosLocales = localStorage.getItem('db_reportes');
-                cacheReportes = datosLocales ? JSON.parse(datosLocales) : [];
-                if (!Array.isArray(cacheReportes)) cacheReportes = [];
-            } catch(e) { 
-                cacheReportes = []; 
-            }
+                let cacheDataStr = localStorage.getItem('db_reportes_cache');
+                if (cacheDataStr) {
+                    let cacheData = JSON.parse(cacheDataStr);
+                    if (Date.now() - cacheData.timestamp < CACHE_EXPIRY) {
+                        cacheReportes = cacheData.data;
+                        usarCache = true;
+                    }
+                }
+            } catch(e) { cacheReportes = []; }
 
-            try {
-                if (navigator.onLine) {
+            if (!usarCache && navigator.onLine) {
+                try {
                     const res = await fetch(`${SCRIPT_URL}?action=getReportes&t=${Date.now()}`);
                     const textData = await res.text();
                     
@@ -581,11 +669,20 @@
                             rep.fecha_f = window.formatearFechaLimpia(rep.fecha_f); 
                             return rep;
                         });
-                        localStorage.setItem('db_reportes', JSON.stringify(cacheReportes));
+                        localStorage.setItem('db_reportes_cache', JSON.stringify({ data: cacheReportes, timestamp: Date.now() }));
                     }
+                } catch (e) { 
+                    console.error("Usando historial almacenado localmente.", e); 
+                    try {
+                        let bk = localStorage.getItem('db_reportes_cache');
+                        if (bk) cacheReportes = JSON.parse(bk).data;
+                    } catch(ex) { cacheReportes = []; }
                 }
-            } catch (e) { 
-                console.error("Usando historial almacenado localmente.", e); 
+            } else if (!usarCache && !navigator.onLine) {
+                 try {
+                    let bk = localStorage.getItem('db_reportes_cache');
+                    if (bk) cacheReportes = JSON.parse(bk).data;
+                } catch(ex) { cacheReportes = []; }
             }
 
             cargarHistorialLocamente();
@@ -594,19 +691,42 @@
         window.cargarHistorialLocamente = () => {
             const container = document.getElementById("listaHistorial");
             const gradoFiltro = document.getElementById("filtroGradoHistorial").value;
+            const fechaDesde = document.getElementById("fechaDesde").value;
+            const fechaHasta = document.getElementById("fechaHasta").value;
             
-            let reportes = [...cacheReportes];
+            let reportes = [...(cacheReportes || [])];
             reportes.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
-            container.innerHTML = "";
-            let reportesMostrados = 0;
-
-            reportes.forEach((rep) => {
+            let reportesFiltrados = reportes.filter((rep) => {
                 let gradoRep = window.formatearGradoReal(rep.grado);
-                if (gradoFiltro !== "" && gradoRep !== gradoFiltro) return;
-                
-                reportesMostrados++;
-                
+                if (gradoFiltro !== "" && gradoRep !== gradoFiltro) return false;
+
+                if (fechaDesde || fechaHasta) {
+                    let dateRep = new Date(rep.fecha);
+                    dateRep.setHours(0,0,0,0);
+                    
+                    if (fechaDesde) {
+                        let fd = new Date(fechaDesde + "T00:00:00");
+                        if (dateRep < fd) return false;
+                    }
+                    if (fechaHasta) {
+                        let fh = new Date(fechaHasta + "T00:00:00");
+                        if (dateRep > fh) return false;
+                    }
+                }
+                return true;
+            });
+
+            window.reportesActualesFiltrados = reportesFiltrados;
+
+            if (reportesFiltrados.length === 0) {
+                container.innerHTML = `<p class="text-center text-slate-400 text-sm py-10">No hay reportes disponibles para estos filtros.</p>`;
+                return;
+            }
+
+            let html = "";
+            reportesFiltrados.forEach((rep) => {
+                let gradoRep = window.formatearGradoReal(rep.grado);
                 let fechaRep = window.formatearFechaLimpia(rep.fecha_f);
                 let ausentesArr = window.arrSeguro(rep.ausentes);
                 let tardanzasArr = window.arrSeguro(rep.tardanzas);
@@ -617,7 +737,7 @@
                 const strAus = ausentesArr.length > 0 ? ausentesArr.join("\n") : "Ninguna (Todos presentes)";
                 const strTar = tardanzasArr.length > 0 ? `\n\n*Llegadas tarde:*\n${tardanzasArr.join("\n")}` : "";
 
-                container.innerHTML += `
+                html += `
                     <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm border-l-4 ${colorBorde}">
                         <div class="flex justify-between items-start mb-2">
                             <div>
@@ -639,12 +759,35 @@
                         </button>
                     </div>`;
             });
-
-            if (reportesMostrados === 0) container.innerHTML = `<p class="text-center text-slate-400 text-sm py-10">No hay reportes disponibles.</p>`;
+            container.innerHTML = html;
         }
 
+        window.exportarExcelHistorial = () => {
+            if (!window.reportesActualesFiltrados || window.reportesActualesFiltrados.length === 0) {
+                return showToast("No hay datos para exportar", "error");
+            }
+
+            const dataToExport = window.reportesActualesFiltrados.map(r => ({
+                "Fecha": r.fecha_f,
+                "Hora": r.hora_f,
+                "Grado": r.grado,
+                "Ausentes": (window.arrSeguro(r.ausentes)).join(", ") || "Ninguna",
+                "Tardanzas": (window.arrSeguro(r.tardanzas)).join(", ") || "Ninguna",
+                "Total Faltas": r.total,
+                "Total Tardanzas": r.total_tardanzas,
+                "Tomado Por": r.tomado_por
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(dataToExport);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Historial");
+            XLSX.writeFile(wb, "Historial_Asistencia.xlsx");
+            showToast("Exportando a Excel...", "success");
+        };
+
         window.copiar = (f, h, g, l, r) => {
-            navigator.clipboard.writeText(`📌 *REPORTE ASISTENCIA*\n🏫 Grado: ${g}\n📅 Fecha: ${f}\n🕒 Hora: ${h}\n👩‍🏫 Reporta: ${r}\n\n*Ausentes/Tardes:*\n${l}`).then(() => alert("Copiado."));
+            navigator.clipboard.writeText(`📌 *REPORTE ASISTENCIA*\n🏫 Grado: ${g}\n📅 Fecha: ${f}\n🕒 Hora: ${h}\n👩‍🏫 Reporta: ${r}\n\n*Ausentes/Tardes:*\n${l}`)
+            .then(() => showToast("Copiado al portapapeles", "success"));
         };
 
         window.cargarResumen = async () => {
@@ -662,7 +805,6 @@
             cacheReportes.forEach(rep => {
                 let gradoRep = window.formatearGradoReal(rep.grado);
                 if (gradoRep === grado) {
-                    
                     let ausentesArr = window.arrSeguro(rep.ausentes);
                     let tardanzasArr = window.arrSeguro(rep.tardanzas);
 
@@ -680,11 +822,16 @@
                 }
             });
 
-            container.innerHTML = "";
             const nombres = Object.keys(estudiantesStats).sort();
+            if (nombres.length === 0) {
+                container.innerHTML = `<p class="text-center text-slate-400 text-sm py-10">No hay estudiantes en este grado.</p>`;
+                return;
+            }
+
+            let html = "";
             nombres.forEach(nom => {
                 const st = estudiantesStats[nom];
-                container.innerHTML += `
+                html += `
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
                         <div class="w-2/3">
                             <h4 class="font-bold text-slate-700 text-sm leading-tight">${nom}</h4>
@@ -696,19 +843,17 @@
                         </div>
                     </div>`;
             });
-            
-            if (nombres.length === 0) container.innerHTML = `<p class="text-center text-slate-400 text-sm py-10">No hay estudiantes en este grado.</p>`;
+            container.innerHTML = html;
         };
 
         window.importarExcel = async () => {
             const fileInput = document.getElementById('excelInput');
             const btn = document.getElementById('btnImportar');
             
-            if (!fileInput.files[0]) return alert("Selecciona un archivo Excel.");
+            if (!fileInput.files[0]) return showToast("Selecciona un archivo Excel.", "error");
             
-            // TERCER CANDADO: Cargar el Excel
             if (prompt("🔐 Introduce la contraseña maestra para importar el listado:") !== "admin123") {
-                return alert("Contraseña incorrecta. Acción denegada.");
+                return showToast("Contraseña incorrecta. Acción denegada.", "error");
             }
             
             btn.disabled = true; btn.innerHTML = "Procesando...";
@@ -754,7 +899,7 @@
                 }
 
                 if (aInsertar.length === 0) {
-                    alert("No se encontraron datos en el Excel. Verifica que las columnas se llamen: Nombre, Apellido y Grado.");
+                    showToast("No se encontraron datos válidos en el Excel.", "error");
                     btn.disabled = false; btn.innerHTML = "Cargar a Google Sheets"; fileInput.value = '';
                     return;
                 }
@@ -766,14 +911,14 @@
 
                 if (!response.ok) throw new Error("Fallo de red");
 
-                alert(`¡Se procesaron ${aInsertar.length} estudiantes correctamente!`);
-                cacheGrados = []; cacheEstudiantes = {}; localStorage.removeItem('db_estudiantes');
+                showToast(`¡Se procesaron ${aInsertar.length} estudiantes correctamente!`, "success");
+                cacheGrados = []; cacheEstudiantes = {}; localStorage.removeItem('db_estudiantes_cache');
                 
-                location.reload(); 
+                setTimeout(() => location.reload(), 1500); 
                 
             } catch (error) {
                 console.error(error);
-                alert("Error al enviar a Google Sheets. (Asegúrate de haber configurado los permisos de 'Cualquier Persona').");
+                showToast("Error al enviar a Google Sheets.", "error");
             } finally {
                 btn.disabled = false; btn.innerHTML = "Cargar a Google Sheets"; fileInput.value = '';
             }
