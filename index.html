@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Asistencia I.E.T. San José</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <style>
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans h-screen w-screen overflow-hidden text-slate-800">
+
+    <main class="max-w-md mx-auto bg-white shadow-2xl h-full flex flex-col relative">
+        
+        <header class="bg-indigo-700 text-white p-6 rounded-b-3xl shadow-md flex-shrink-0 z-10 flex justify-between items-start">
+            <div>
+                <h1 class="text-2xl font-extrabold tracking-tight">Asistencia Escolar</h1>
+                <p class="text-indigo-100 font-medium opacity-90">I.E.T. San José - Fresno</p>
+            </div>
+            <button onclick="pedirPasswordAdmin()" class="bg-indigo-800 p-2 rounded-full hover:bg-indigo-900 transition-colors" aria-label="Acceso Administrador">
+                🔒
+            </button>
+        </header>
+
+        <nav class="flex border-b border-slate-200 bg-white/80 backdrop-blur-md z-20 flex-shrink-0" id="menuNavegacion">
+            <button onclick="mostrarSeccion('asistencia')" class="flex-1 py-4 text-xs sm:text-sm font-bold border-b-4 border-indigo-600 text-indigo-700 transition-colors" id="tab-asistencia">
+                Lista
+            </button>
+            <button onclick="mostrarSeccion('historial')" class="flex-1 py-4 text-xs sm:text-sm font-bold border-b-4 border-transparent text-slate-500 hover:text-slate-700 transition-colors" id="tab-historial">
+                Historial
+            </button>
+            <button onclick="mostrarSeccion('resumen')" class="flex-1 py-4 text-xs sm:text-sm font-bold border-b-4 border-transparent text-slate-500 hover:text-slate-700 transition-colors" id="tab-resumen">
+                Resumen
+            </button>
+            <button onclick="mostrarSeccion('admin')" class="hidden flex-1 py-4 text-xs sm:text-sm font-bold border-b-4 border-transparent text-slate-500 hover:text-slate-700 transition-colors" id="tab-admin">
+                ⚙️ Admin
+            </button>
+        </nav>
+
+        <section id="sec-asistencia" class="flex-grow flex flex-col overflow-hidden p-5 space-y-5 fade-in">
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex-shrink-0">
+                <label for="selectorGrado" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Seleccionar Grupo:</label>
+                <select id="selectorGrado" onchange="cambiarGrupo()" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-indigo-900 outline-none border border-slate-200 focus:border-indigo-500 transition-all appearance-none cursor-pointer">
+                    <option value="">-- Toca para elegir un grado --</option>
+                </select>
+            </div>
+
+            <div id="areaLista" class="hidden flex-grow flex flex-col overflow-hidden space-y-4">
+                <div class="flex justify-between items-end px-1 flex-shrink-0">
+                    <h2 class="text-xl font-bold text-slate-800" id="tituloGrupo">Estudiantes</h2>
+                    <span id="contador" class="text-xs bg-indigo-100 px-3 py-1 rounded-full text-indigo-700 font-bold">0 Registrados</span>
+                </div>
+                
+                <div id="contenedorEstudiantes" class="flex-grow overflow-y-auto space-y-3 pr-2 custom-scroll pb-2">
+                    </div>
+
+                <div class="pt-2 pb-4 flex-shrink-0 bg-white">
+                    <button onclick="guardarInasistencias()" id="btnGuardar" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-200 transition-all transform active:scale-[0.98]">
+                        Guardar <span id="labelBotonGrado"></span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="mensajeVacio" class="flex-grow flex flex-col items-center justify-center text-slate-400 text-sm">
+                <p>Selecciona un grado arriba para iniciar.</p>
+            </div>
+        </section>
+
+        <section id="sec-historial" class="hidden flex-grow flex flex-col overflow-hidden p-5 space-y-4 fade-in">
+            <div class="flex justify-between items-center flex-shrink-0 mb-2">
+                <h2 class="text-xl font-bold text-slate-800">Reportes Diarios</h2>
+                <button onclick="cargarHistorial()" class="text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-indigo-100 transition-colors">
+                    🔄 Actualizar
+                </button>
+            </div>
+
+            <div class="flex-shrink-0 mb-2">
+                <select id="filtroGradoHistorial" onchange="cargarHistorial()" class="w-full p-2 bg-white rounded-lg text-sm font-semibold text-slate-700 border border-slate-200 focus:border-indigo-500 outline-none cursor-pointer shadow-sm">
+                    <option value="">Todos los grados</option>
+                </select>
+            </div>
+            
+            <div id="listaHistorial" class="flex-grow overflow-y-auto space-y-4 pr-2 custom-scroll pb-4">
+                </div>
+        </section>
+
+        <section id="sec-resumen" class="hidden flex-grow flex flex-col overflow-hidden p-5 space-y-4 fade-in">
+            <div class="flex justify-between items-center flex-shrink-0 mb-2">
+                <h2 class="text-xl font-bold text-slate-800">Consolidado por Estudiante</h2>
+            </div>
+
+            <div class="flex-shrink-0 mb-2">
+                <select id="filtroGradoResumen" onchange="cargarResumen()" class="w-full p-2 bg-white rounded-lg text-sm font-semibold text-slate-700 border border-slate-200 focus:border-indigo-500 outline-none cursor-pointer shadow-sm">
+                    <option value="">-- Selecciona un grado --</option>
+                </select>
+            </div>
+            
+            <div id="listaResumen" class="flex-grow overflow-y-auto space-y-3 pr-2 custom-scroll pb-4">
+                <p class="text-center text-slate-400 text-sm py-10">Selecciona un grado para ver las inasistencias por estudiante.</p>
+            </div>
+        </section>
+
+        <section id="sec-admin" class="hidden flex-grow overflow-y-auto p-5 space-y-6 fade-in bg-slate-100">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">📥 Importar Estudiantes</h2>
+                <p class="text-xs text-slate-500 mb-4">El Excel debe tener las columnas: <b>Last Name</b>, <b>First Name</b>, <b>Grado</b> y opcionalmente <b>Zipgrade</b>.</p>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Archivo Excel</label>
+                        <input type="file" id="excelInput" accept=".xlsx, .xls, .csv" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-100 file:text-indigo-700 cursor-pointer"/>
+                    </div>
+                    <button onclick="importarExcel()" id="btnImportar" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm py-3 rounded-xl font-bold transition-colors shadow-md shadow-emerald-200">
+                        Cargar a Firebase
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-red-100">
+                <h2 class="text-lg font-bold text-red-600 mb-4 border-b border-red-100 pb-2">⚠️ Zona de Peligro</h2>
+                <button onclick="limpiarBaseDatos()" class="w-full border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white text-xs py-3 rounded-xl font-bold uppercase transition-colors">
+                    Borrar todos los estudiantes
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, addDoc, query, where, deleteDoc, doc, serverTimestamp, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCm3ApxABTJJdk__pDUYANPkAb2AgbWmbA",
+            authDomain: "asistencia-bd65c.firebaseapp.com",
+            projectId: "asistencia-bd65c",
+            storageBucket: "asistencia-bd65c.firebasestorage.app",
+            messagingSenderId: "378486280797",
+            appId: "1:378486280797:web:bb2748d5fa3f9ef0e0b3b4",
+            measurementId: "G-BJQGPLFS2E"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        enableIndexedDbPersistence(db).catch(() => {
+            console.warn("Persistencia offline no disponible en este navegador.");
+        });
+
+        window.addEventListener('online', () => {
+            alert("🌐 Conexión a internet restaurada. Sincronizando datos automáticamente...");
+        });
+
+        // --- NAVEGACIÓN Y AUTENTICACIÓN ---
+        window.pedirPasswordAdmin = () => {
+            const password = prompt("🔐 Introduce la contraseña de administrador:");
+            if (password === "admin123") {
+                document.getElementById('tab-admin').classList.remove('hidden');
+                mostrarSeccion('admin');
+            } else if (password !== null) {
+                alert("Contraseña incorrecta.");
+            }
+        };
+
+        window.mostrarSeccion = (seccion) => {
+            const secciones = ['asistencia', 'historial', 'resumen', 'admin'];
+            secciones.forEach(sec => {
+                const elSec = document.getElementById(`sec-${sec}`);
+                const elTab = document.getElementById(`tab-${sec}`);
+                
+                if (sec === seccion) {
+                    elSec.classList.remove('hidden');
+                    elTab.classList.replace('border-transparent', 'border-indigo-600');
+                    elTab.classList.replace('text-slate-500', 'text-indigo-700');
+                } else {
+                    if (elSec) elSec.classList.add('hidden');
+                    if (elTab) {
+                        elTab.classList.replace('border-indigo-600', 'border-transparent');
+                        elTab.classList.replace('text-indigo-700', 'text-slate-500');
+                    }
+                }
+            });
+            if (seccion === 'historial') cargarHistorial();
+            if (seccion === 'resumen') cargarResumen();
+        };
+
+        // --- LÓGICA DE ASISTENCIA, EXCUSAS Y LLEGADAS TARDE ---
+
+        window.toggleEstado = (index) => {
+            const checkboxAsistencia = document.getElementById(`check-${index}`);
+            const containerExcusa = document.getElementById(`excusa-container-${index}`);
+            const containerTarde = document.getElementById(`tarde-container-${index}`);
+            const filaEstudiante = document.getElementById(`row-${index}`);
+            
+            if (!checkboxAsistencia.checked) {
+                containerExcusa.classList.remove('hidden');
+                containerTarde.classList.add('hidden');
+                document.getElementById(`tarde-check-${index}`).checked = false; 
+                
+                filaEstudiante.classList.replace('bg-white', 'bg-red-50');
+                filaEstudiante.classList.replace('border-slate-200', 'border-red-200');
+            } else {
+                containerExcusa.classList.add('hidden');
+                containerTarde.classList.remove('hidden');
+                document.getElementById(`excusa-check-${index}`).checked = false; 
+                
+                filaEstudiante.classList.replace('bg-red-50', 'bg-white');
+                filaEstudiante.classList.replace('border-red-200', 'border-slate-200');
+            }
+        };
+
+        async function cargarGradosDisponibles() {
+            const selectorAsistencia = document.getElementById("selectorGrado");
+            const selectorHistorial = document.getElementById("filtroGradoHistorial");
+            const selectorResumen = document.getElementById("filtroGradoResumen");
+            
+            try {
+                const snapshot = await getDocs(collection(db, "estudiantes"));
+                const gradosSet = new Set();
+                snapshot.forEach(doc => gradosSet.add(doc.data().grado));
+                
+                const gradosOrdenados = Array.from(gradosSet).sort();
+                
+                selectorAsistencia.innerHTML = '<option value="">-- Toca para elegir un grado --</option>';
+                selectorHistorial.innerHTML = '<option value="">Todos los grados</option>';
+                selectorResumen.innerHTML = '<option value="">-- Selecciona un grado --</option>';
+                
+                gradosOrdenados.forEach(g => {
+                    selectorAsistencia.innerHTML += `<option value="${g}">${g}</option>`;
+                    selectorHistorial.innerHTML += `<option value="${g}">${g}</option>`;
+                    selectorResumen.innerHTML += `<option value="${g}">${g}</option>`;
+                });
+            } catch (e) { console.error("Error cargando grados:", e); }
+        }
+
+        window.cambiarGrupo = async () => {
+            const grado = document.getElementById("selectorGrado").value;
+            const container = document.getElementById("contenedorEstudiantes");
+            const area = document.getElementById("areaLista");
+            const msg = document.getElementById("mensajeVacio");
+
+            if (!grado) { 
+                area.classList.add("hidden"); msg.classList.remove("hidden"); return; 
+            }
+            
+            area.classList.remove("hidden"); msg.classList.add("hidden");
+            document.getElementById("tituloGrupo").innerText = `Grupo: ${grado}`;
+            document.getElementById("labelBotonGrado").innerText = grado;
+            
+            container.innerHTML = `<p class="text-center text-sm py-10 text-indigo-500 font-bold animate-pulse">Cargando...</p>`;
+            
+            try {
+                const q = query(collection(db, "estudiantes"), where("grado", "==", grado));
+                const snapshot = await getDocs(q);
+                let lista = [];
+                snapshot.forEach(d => lista.push(d.data()));
+                
+                // Ordenamiento alfabético automático por el texto guardado (APELLIDOS NOMBRES)
+                lista.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+                container.innerHTML = "";
+                document.getElementById("contador").innerText = `${lista.length} Alumnos`;
+                
+                if (lista.length === 0) return container.innerHTML = `<p class="text-center text-sm py-10">Vacío.</p>`;
+
+                lista.forEach((est, index) => {
+                    const idCheck = `check-${index}`;
+                    const idExcusa = `excusa-check-${index}`;
+                    const idTarde = `tarde-check-${index}`;
+                    
+                    container.innerHTML += `
+                        <div id="row-${index}" class="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm transition-colors duration-200">
+                            <label for="${idCheck}" class="flex items-center justify-between cursor-pointer">
+                                <span class="font-semibold text-slate-700 text-sm w-3/4 select-none">${est.nombre}</span>
+                                <input type="checkbox" id="${idCheck}" checked class="asistencia-check w-7 h-7 rounded text-indigo-600 focus:ring-indigo-500 accent-indigo-600 cursor-pointer" data-nombre="${est.nombre}" data-grado="${est.grado}" data-index="${index}" onchange="toggleEstado(${index})">
+                            </label>
+                            
+                            <div id="excusa-container-${index}" class="hidden mt-3 pt-3 border-t border-red-100 flex items-center justify-between">
+                                <label for="${idExcusa}" class="text-xs font-bold text-red-600 uppercase cursor-pointer select-none">¿Presenta excusa?</label>
+                                <input type="checkbox" id="${idExcusa}" class="w-5 h-5 rounded border-red-300 text-red-600 focus:ring-red-500 accent-red-600 cursor-pointer">
+                            </div>
+
+                            <div id="tarde-container-${index}" class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+                                <label for="${idTarde}" class="text-xs font-bold text-orange-500 uppercase cursor-pointer select-none">¿Llegó tarde?</label>
+                                <input type="checkbox" id="${idTarde}" class="w-5 h-5 rounded border-orange-300 text-orange-500 focus:ring-orange-500 accent-orange-500 cursor-pointer">
+                            </div>
+                        </div>`;
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        window.guardarInasistencias = async () => {
+            const checks = document.querySelectorAll(".asistencia-check");
+            const gradoActual = document.getElementById("selectorGrado").value;
+            let ausentes = [];
+            let tardanzas = [];
+            
+            checks.forEach(c => { 
+                const index = c.dataset.index;
+                if (!c.checked) { 
+                    const checkExcusa = document.getElementById(`excusa-check-${index}`);
+                    const tieneExcusa = checkExcusa && checkExcusa.checked;
+                    let registroFalta = c.dataset.nombre;
+                    if (tieneExcusa) registroFalta += ` (Con excusa)`;
+                    ausentes.push(registroFalta); 
+                } else {
+                    const checkTarde = document.getElementById(`tarde-check-${index}`);
+                    if (checkTarde && checkTarde.checked) {
+                        tardanzas.push(c.dataset.nombre);
+                    }
+                }
+            });
+
+            const btnGuardar = document.getElementById("btnGuardar");
+            const textoOriginal = btnGuardar.innerHTML;
+            btnGuardar.disabled = true;
+            btnGuardar.innerHTML = "Guardando...";
+
+            try {
+                const ahora = new Date();
+                const hora = ahora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+                await addDoc(collection(db, "reportes_asistencia"), {
+                    fecha: serverTimestamp(),
+                    fecha_f: ahora.toLocaleDateString('es-CO'),
+                    hora_f: hora,
+                    grado: gradoActual,
+                    ausentes: ausentes,
+                    tardanzas: tardanzas,
+                    total: ausentes.length,
+                    total_tardanzas: tardanzas.length
+                });
+
+                if (!navigator.onLine) {
+                    alert("📵 Sin conexión a internet. El reporte se guardó localmente y se subirá cuando te conectes.");
+                } else {
+                    alert("¡Reporte guardado con éxito!");
+                }
+
+                btnGuardar.innerHTML = textoOriginal;
+                btnGuardar.disabled = false;
+                document.getElementById("selectorGrado").value = "";
+                cambiarGrupo();
+            } catch (error) {
+                alert("Hubo un error al guardar.");
+                btnGuardar.innerHTML = textoOriginal;
+                btnGuardar.disabled = false;
+            }
+        };
+
+        // --- LÓGICA DEL HISTORIAL ---
+
+        window.cargarHistorial = async () => {
+            const container = document.getElementById("listaHistorial");
+            const gradoFiltro = document.getElementById("filtroGradoHistorial").value;
+            
+            container.innerHTML = `<p class="text-center text-sm py-10 text-indigo-500 font-bold animate-pulse">Consultando...</p>`;
+            
+            try {
+                const snapshot = await getDocs(collection(db, "reportes_asistencia"));
+                let reportes = [];
+                snapshot.forEach(d => reportes.push({ id: d.id, ...d.data() }));
+
+                reportes.sort((a, b) => (b.fecha?.seconds || 0) - (a.fecha?.seconds || 0));
+
+                container.innerHTML = "";
+                let reportesMostrados = 0;
+
+                reportes.forEach((rep) => {
+                    if (gradoFiltro !== "" && rep.grado !== gradoFiltro) return;
+                    
+                    reportesMostrados++;
+                    const colorBorde = rep.total === 0 ? 'border-l-emerald-500' : 'border-l-rose-500';
+                    const colorEtiqueta = rep.total === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700';
+                    const textoEtiqueta = rep.total === 0 ? 'Asistencia Perfecta' : `${rep.total} Faltas`;
+                    
+                    const listaTexto = rep.ausentes && rep.ausentes.length > 0 ? rep.ausentes.join("\n") : "Ninguna (Todos presentes)";
+                    let listaTardes = rep.tardanzas && rep.tardanzas.length > 0 ? `\n\n*Llegadas tarde:*\n${rep.tardanzas.join("\n")}` : "";
+                    
+                    const textoCopia = listaTexto + listaTardes;
+
+                    container.innerHTML += `
+                        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm border-l-4 ${colorBorde}">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h3 class="text-base font-bold text-slate-800">${rep.grado}</h3>
+                                    <p class="text-xs text-slate-500 mt-1">${rep.fecha_f} - ${rep.hora_f}</p>
+                                </div>
+                                <div class="flex flex-col items-end gap-1">
+                                    <span class="text-[10px] ${colorEtiqueta} px-2.5 py-1 rounded-full font-bold uppercase">${textoEtiqueta}</span>
+                                    ${rep.total_tardanzas > 0 ? `<span class="text-[10px] bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full font-bold uppercase">${rep.total_tardanzas} Tardes</span>` : ''}
+                                </div>
+                            </div>
+                            <div class="bg-slate-50 rounded-xl p-3 mb-2 text-xs text-slate-600 whitespace-pre-line leading-relaxed">
+                                <b>Ausentes:</b><br>${listaTexto}
+                                ${rep.total_tardanzas > 0 ? `<br><br><b>Llegadas Tarde:</b><br>${rep.tardanzas.join("<br>")}` : ''}
+                            </div>
+                            <button onclick="copiar('${rep.fecha_f}', '${rep.hora_f}', '${rep.grado}', \`${textoCopia}\`)" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2 rounded-lg">
+                                Copiar Resumen
+                            </button>
+                        </div>`;
+                });
+
+                if (reportesMostrados === 0) {
+                    container.innerHTML = `<p class="text-center text-slate-400 text-sm py-10">No hay reportes para mostrar.</p>`;
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        window.copiar = (f, h, g, l) => {
+            const t = `📌 *REPORTE DE ASISTENCIA*\n🏫 Grado: ${g}\n📅 Fecha: ${f}\n🕒 Hora: ${h}\n\n*Ausentes:*\n${l}`;
+            navigator.clipboard.writeText(t).then(() => alert("Reporte copiado."));
+        };
+
+        // --- LÓGICA DE RESUMEN INDIVIDUAL ---
+        window.cargarResumen = async () => {
+            const grado = document.getElementById("filtroGradoResumen").value;
+            const container = document.getElementById("listaResumen");
+            
+            if (!grado) {
+                container.innerHTML = `<p class="text-center text-slate-400 text-sm py-10">Selecciona un grado para ver el resumen.</p>`;
+                return;
+            }
+
+            container.innerHTML = `<p class="text-center text-sm py-10 text-indigo-500 font-bold animate-pulse">Calculando datos de Firebase...</p>`;
+
+            try {
+                const qEst = query(collection(db, "estudiantes"), where("grado", "==", grado));
+                const snapEst = await getDocs(qEst);
+                let estudiantes = {};
+                snapEst.forEach(d => {
+                    const data = d.data();
+                    estudiantes[data.nombre] = {
+                        codigo: data.codigo_zipgrade || 'Sin Código',
+                        faltas: 0,
+                        tardanzas: 0
+                    };
+                });
+
+                const qRep = query(collection(db, "reportes_asistencia"), where("grado", "==", grado));
+                const snapRep = await getDocs(qRep);
+                
+                snapRep.forEach(d => {
+                    const data = d.data();
+                    if(data.ausentes) {
+                        data.ausentes.forEach(aus => {
+                            const nombreLimpio = aus.replace(" (Con excusa)", "");
+                            if (estudiantes[nombreLimpio]) estudiantes[nombreLimpio].faltas++;
+                        });
+                    }
+                    if(data.tardanzas) {
+                        data.tardanzas.forEach(tar => {
+                            if (estudiantes[tar]) estudiantes[tar].tardanzas++;
+                        });
+                    }
+                });
+
+                container.innerHTML = "";
+                // Como los nombres se importaron "APELLIDOS NOMBRES", se ordenarán solos alfabéticamente
+                const nombresOrdenados = Object.keys(estudiantes).sort();
+                if (nombresOrdenados.length === 0) {
+                     container.innerHTML = `<p class="text-center text-slate-400 text-sm py-10">No hay estudiantes cargados en este grado.</p>`;
+                     return;
+                }
+
+                nombresOrdenados.forEach(nom => {
+                    const stats = estudiantes[nom];
+                    container.innerHTML += `
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
+                            <div class="w-2/3">
+                                <h4 class="font-bold text-slate-700 text-sm leading-tight">${nom}</h4>
+                                <p class="text-xs text-slate-500 mt-1">Zipgrade: <span class="font-mono bg-indigo-50 px-1.5 py-0.5 rounded text-indigo-700 font-bold">${stats.codigo}</span></p>
+                            </div>
+                            <div class="flex gap-4 text-center">
+                                <div>
+                                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Faltas</p>
+                                    <p class="font-bold text-lg text-red-500 leading-none mt-1">${stats.faltas}</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Tardes</p>
+                                    <p class="font-bold text-lg text-orange-500 leading-none mt-1">${stats.tardanzas}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+            } catch(e) { 
+                console.error(e); 
+                container.innerHTML = `<p class="text-center text-red-500 text-sm py-10">Error al cargar estadísticas.</p>`; 
+            }
+        };
+
+        // --- LÓGICA DE ADMINISTRADOR ---
+
+        window.importarExcel = async () => {
+            const fileInput = document.getElementById('excelInput');
+            const btnImportar = document.getElementById('btnImportar');
+            
+            if (!fileInput.files[0]) return alert("Por favor, selecciona un archivo Excel para cargar.");
+            
+            btnImportar.disabled = true;
+            btnImportar.innerHTML = "Procesando...";
+
+            try {
+                const data = await fileInput.files[0].arrayBuffer();
+                const workbook = XLSX.read(data);
+                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                
+                let contador = 0;
+                for (let fila of jsonData) {
+                    // Extraer datos reconociendo distintas formas en las que pueden venir las columnas
+                    let firstName = fila['First Name'] || fila['First name'] || fila.Nombres || fila.Nombre || '';
+                    let lastName = fila['Last Name'] || fila['Last name'] || fila.Apellidos || fila.Apellido || '';
+                    let gradoExcel = fila.Grado || fila.grado || fila.Curso || fila.curso || '';
+                    const zipgrade = fila.Zipgrade || fila.zipgrade || fila['ZipGrade ID'] || fila.Codigo || fila['Código'] || fila.codigo || '';
+                    
+                    // Formatear el nombre como: APELLIDOS NOMBRES
+                    let nombreCompleto = '';
+                    if (lastName && firstName) {
+                        nombreCompleto = `${lastName} ${firstName}`;
+                    } else if (lastName) {
+                        nombreCompleto = lastName;
+                    } else if (firstName) {
+                        nombreCompleto = firstName;
+                    } else if (fila.Estudiante) {
+                        nombreCompleto = fila.Estudiante; // Fallback por si la columna se llama solo 'Estudiante'
+                    }
+                    
+                    // Guardar solo si hay un nombre y un grado válido en esa fila del Excel
+                    if (nombreCompleto && gradoExcel) {
+                        await addDoc(collection(db, "estudiantes"), { 
+                            nombre: String(nombreCompleto).trim().toUpperCase(), 
+                            grado: String(gradoExcel).trim().toUpperCase(),
+                            codigo_zipgrade: String(zipgrade).trim()
+                        });
+                        contador++;
+                    }
+                }
+                
+                alert(`¡Éxito! Se cargaron ${contador} estudiantes organizados por grado desde el archivo.`);
+                cargarGradosDisponibles();
+                fileInput.value = '';
+            } catch (error) {
+                console.error(error);
+                alert("Error al leer el archivo Excel. Verifica que el formato sea correcto.");
+            } finally {
+                btnImportar.disabled = false;
+                btnImportar.innerHTML = "Cargar a Firebase";
+            }
+        };
+
+        window.limpiarBaseDatos = async () => {
+            if(!confirm("⚠️ ¡ADVERTENCIA! ¿Estás seguro de que quieres borrar TODOS los estudiantes? Esta acción no se puede deshacer.")) return;
+            if(!confirm("¿Completamente seguro? Escribe 'admin123' si es así.") !== false) {
+                 const conf = prompt("Escribe la contraseña para confirmar:");
+                 if(conf !== "admin123") return alert("Cancelado.");
+            }
+
+            try {
+                const snap = await getDocs(collection(db, "estudiantes"));
+                for (const d of snap.docs) { 
+                    await deleteDoc(doc(db, "estudiantes", d.id)); 
+                }
+                alert("Base de datos limpia correctamente.");
+                location.reload();
+            } catch (error) {
+                alert("Hubo un error al borrar la base de datos.");
+                console.error(error);
+            }
+        };
+
+        window.onload = cargarGradosDisponibles;
+    </script>
+</body>
+</html>
