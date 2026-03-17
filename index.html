@@ -27,13 +27,13 @@
             <div class="flex-1 min-w-0">
                 <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight truncate">Asistencia Escolar</h1>
                 <p class="text-indigo-100 font-medium opacity-90 text-xs sm:text-sm truncate">I.E.T. San José - Fresno</p>
-                <p id="infoUsuarioActual" class="hidden text-[10px] sm:text-xs text-emerald-300 font-bold mt-1.5 uppercase truncate"></p>
+                <p id="infoUsuarioActual" class="hidden text-xs sm:text-sm text-emerald-300 font-bold mt-1.5 uppercase truncate"></p>
             </div>
             
             <img src="logo.png" alt="Logo" class="h-14 w-14 sm:h-16 sm:w-16 object-contain flex-shrink-0">
             
             <div class="flex flex-col justify-center items-end flex-shrink-0">
-                <button onclick="cerrarSesion()" id="btnSalir" class="hidden text-[10px] bg-red-500 hover:bg-red-600 text-white px-2.5 py-1.5 rounded font-bold uppercase transition-colors">
+                <button onclick="cerrarSesion()" id="btnSalir" class="hidden text-sm bg-red-500 hover:bg-red-600 text-white px-2.5 py-1.5 rounded font-bold uppercase transition-colors">
                     Salir
                 </button>
             </div>
@@ -64,10 +64,10 @@
         </section>
 
         <nav class="hidden flex border-b border-slate-200 bg-white/80 backdrop-blur-md z-20 flex-shrink-0" id="menuNavegacion">
-            <button onclick="mostrarSeccion('asistencia')" class="flex-1 py-4 text-xs sm:text-sm font-bold border-b-4 border-indigo-600 text-indigo-700 transition-colors" id="tab-asistencia">Lista</button>
-            <button onclick="mostrarSeccion('historial')" class="flex-1 py-4 text-xs sm:text-sm font-bold border-b-4 border-transparent text-slate-500 hover:text-slate-700 transition-colors" id="tab-historial">Historial</button>
-            <button onclick="mostrarSeccion('resumen')" class="flex-1 py-4 text-xs sm:text-sm font-bold border-b-4 border-transparent text-slate-500 hover:text-slate-700 transition-colors" id="tab-resumen">Resumen</button>
-            <button onclick="pedirPasswordAdmin()" class="hidden flex-1 py-4 text-xs sm:text-sm font-bold border-b-4 border-transparent text-slate-500 hover:text-slate-700 transition-colors" id="tab-admin">⚙️</button>
+            <button onclick="mostrarSeccion('asistencia')" class="flex-1 py-4 text-sm sm:text-sm font-bold border-b-4 border-indigo-600 text-indigo-700 transition-colors" id="tab-asistencia">Lista</button>
+            <button onclick="mostrarSeccion('historial')" class="flex-1 py-4 text-sm sm:text-sm font-bold border-b-4 border-transparent text-slate-500 hover:text-slate-700 transition-colors" id="tab-historial">Historial</button>
+            <button onclick="mostrarSeccion('resumen')" class="flex-1 py-4 text-sm sm:text-sm font-bold border-b-4 border-transparent text-slate-500 hover:text-slate-700 transition-colors" id="tab-resumen">Resumen</button>
+            <button onclick="pedirPasswordAdmin()" class="hidden flex-1 py-4 text-sm sm:text-sm font-bold border-b-4 border-transparent text-slate-500 hover:text-slate-700 transition-colors" id="tab-admin">⚙️</button>
         </nav>
 
         <section id="sec-asistencia" class="hidden flex-grow flex flex-col overflow-hidden p-5 space-y-4 fade-in bg-slate-50">
@@ -102,7 +102,7 @@
         <section id="sec-historial" class="hidden flex-grow flex flex-col overflow-hidden p-5 space-y-4 fade-in bg-slate-50">
             <div class="flex justify-between items-center flex-shrink-0 mb-2">
                 <h2 class="text-xl font-bold text-slate-800">Historial</h2>
-                <button onclick="cargarHistorial()" class="text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-indigo-100 transition-colors">
+                <button onclick="cargarHistorial()" class="text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg text-sm font-bold uppercase tracking-wider hover:bg-indigo-100 transition-colors">
                     🔄 Actualizar
                 </button>
             </div>
@@ -125,7 +125,7 @@
                         <input type="date" id="fechaHasta" onchange="cargarHistorialLocamente()" class="w-full p-2 bg-white rounded-lg text-xs font-semibold text-slate-700 border border-slate-200 focus:border-indigo-500 outline-none shadow-sm">
                     </div>
                 </div>
-                <button onclick="exportarExcelHistorial()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-lg text-xs font-bold transition-colors shadow-sm flex items-center justify-center gap-2 mt-1">
+                <button onclick="exportarExcelHistorial()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center justify-center gap-2 mt-1">
                     <span>📊</span> Exportar a Excel
                 </button>
             </div>
@@ -413,10 +413,10 @@
                 const elTab = document.getElementById(`tab-${sec}`);
                 if (sec === seccion) {
                     elSec.classList.remove('hidden');
-                    if(elTab) elTab.className = "flex-1 py-4 text-xs sm:text-sm font-bold border-b-4 border-indigo-600 text-indigo-700 transition-colors";
+                    if(elTab) elTab.className = "flex-1 py-4 text-sm sm:text-sm font-bold border-b-4 border-indigo-600 text-indigo-700 transition-colors";
                 } else {
                     if (elSec) elSec.classList.add('hidden');
-                    if (elTab) elTab.className = "flex-1 py-4 text-xs sm:text-sm font-bold border-b-4 border-transparent text-slate-500 hover:text-slate-700 transition-colors";
+                    if (elTab) elTab.className = "flex-1 py-4 text-sm sm:text-sm font-bold border-b-4 border-transparent text-slate-500 hover:text-slate-700 transition-colors";
                 }
             });
             if (seccion === 'historial') cargarHistorial();
@@ -780,7 +780,7 @@
                             <b>Ausentes:</b><br>${strAus.replace(/\n/g, '<br>')}
                             ${strTar.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>')}
                         </div>
-                        <button onclick="copiar('${fechaRep}', '${rep.hora_f}', '${gradoRep}', \`${strAus+strTar}\`, '${rep.tomado_por}')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2 rounded-lg">
+                        <button onclick="copiar('${fechaRep}', '${rep.hora_f}', '${gradoRep}', \`${strAus+strTar}\`, '${rep.tomado_por}')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold py-2 rounded-lg">
                             Copiar Resumen
                         </button>
                     </div>`;
