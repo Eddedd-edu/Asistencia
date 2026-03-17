@@ -79,13 +79,10 @@
                     <h2 class="text-xl font-bold text-slate-800" id="tituloGrupo">Estudiantes</h2>
                     <span id="contador" class="text-xs bg-indigo-100 px-3 py-1 rounded-full text-indigo-700 font-bold">0 Registrados</span>
                 </div>
-                
-                <div id="contenedorEstudiantes" class="flex-grow overflow-y-auto space-y-3 pr-2 custom-scroll pb-2">
-                    </div>
-
+                <div id="contenedorEstudiantes" class="flex-grow overflow-y-auto space-y-3 pr-2 custom-scroll pb-2"></div>
                 <div class="pt-2 pb-4 flex-shrink-0 bg-white">
                     <button onclick="guardarInasistencias()" id="btnGuardar" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-200 transition-all transform active:scale-[0.98]">
-                        Guardar <span id="labelBotonGrado"></span>
+                        <span id="btnGuardarTexto">Guardar</span> <span id="labelBotonGrado"></span>
                     </button>
                 </div>
             </div>
@@ -102,15 +99,12 @@
                     🔄 Actualizar
                 </button>
             </div>
-
             <div class="flex-shrink-0 mb-2">
-                <select id="filtroGradoHistorial" onchange="cargarHistorial()" class="w-full p-2 bg-white rounded-lg text-sm font-semibold text-slate-700 border border-slate-200 focus:border-indigo-500 outline-none cursor-pointer shadow-sm">
+                <select id="filtroGradoHistorial" onchange="cargarHistorialLocamente()" class="w-full p-2 bg-white rounded-lg text-sm font-semibold text-slate-700 border border-slate-200 focus:border-indigo-500 outline-none cursor-pointer shadow-sm">
                     <option value="">Todos los grados</option>
                 </select>
             </div>
-            
-            <div id="listaHistorial" class="flex-grow overflow-y-auto space-y-4 pr-2 custom-scroll pb-4">
-                </div>
+            <div id="listaHistorial" class="flex-grow overflow-y-auto space-y-4 pr-2 custom-scroll pb-4"></div>
         </section>
 
         <section id="sec-resumen" class="hidden flex-grow flex flex-col overflow-hidden p-5 space-y-4 fade-in bg-slate-50">
@@ -128,7 +122,6 @@
         </section>
 
         <section id="sec-admin" class="hidden flex-grow overflow-y-auto p-5 space-y-6 fade-in bg-slate-100">
-            
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
                 <h2 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">👤 Crear Docente/Monitor</h2>
                 <form id="formCrearUsuario" onsubmit="crearUsuario(event)" class="space-y-3">
@@ -150,7 +143,7 @@
                 <div class="space-y-4">
                     <input type="file" id="excelInput" accept=".xlsx, .xls, .csv" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-100 file:text-indigo-700 cursor-pointer"/>
                     <button onclick="importarExcel()" id="btnImportar" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm py-3 rounded-xl font-bold transition-colors shadow-md">
-                        Cargar a Firebase
+                        Cargar a Google Sheets
                     </button>
                 </div>
             </div>
@@ -167,9 +160,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, getDocs, addDoc, query, where, deleteDoc, doc, setDoc, getDoc, serverTimestamp, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // CONFIGURACIÓN FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyCm3ApxABTJJdk__pDUYANPkAb2AgbWmbA",
             authDomain: "asistencia-bd65c.firebaseapp.com",
@@ -182,35 +173,94 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app);
-        
-        // App secundaria para que el Admin pueda crear cuentas sin desloguearse
         const adminApp = initializeApp(firebaseConfig, "adminApp");
         const adminAuth = getAuth(adminApp);
 
-        enableIndexedDbPersistence(db).catch(() => {});
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx49cMrsuYeMD_k_yz1do7Q0iwoSdtHeJYZaEqQXdiayVpnVeNonIbSnkD2KLtc5mmg/exec"; 
 
-        // --- SISTEMA DE CACHÉ (Optimización de Cuotas) ---
         let cacheGrados = [];
-        let cacheEstudiantes = {}; // Guarda: { "10-01": [lista estudiantes], "11-02": [...] }
-        let datosUsuarioLogueado = null; // Guardará el nombre y rol del que ingresó
+        let cacheEstudiantes = {}; 
+        let cacheReportes = [];
+        let datosUsuarioLogueado = null; 
 
-        // --- AUTENTICACIÓN ---
+        window.formatearGradoReal = (val) => {
+            if (!val) return "";
+            let str = String(val).trim();
+            const matchIso = str.match(/^\d{4}-(\d{2})-(\d{2})T/);
+            if (matchIso) {
+                return `${parseInt(matchIso[2])}-${parseInt(matchIso[1])}`;
+            }
+            return str.toUpperCase();
+        };
+
+        window.formatearFechaLimpia = (val) => {
+            if (!val) return "";
+            let str = String(val).trim();
+            if (str.includes("T")) {
+                let parts = str.split('T')[0].split('-'); 
+                if (parts.length === 3) {
+                    return `${parts[2]}/${parts[1]}/${parts[0]}`; 
+                }
+            }
+            return str;
+        };
+
+        window.arrSeguro = (val) => {
+            if (Array.isArray(val)) return val;
+            if (typeof val === 'string') {
+                if (!val.trim()) return [];
+                try { 
+                    let p = JSON.parse(val); 
+                    return Array.isArray(p) ? p : [val]; 
+                } catch(e) { 
+                    return val.trim() ? val.split(',').map(s=>s.trim()) : []; 
+                }
+            }
+            return [];
+        };
+
+        window.addEventListener('online', async () => {
+            let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+            if (queue.length > 0) {
+                alert("🌐 Conexión restaurada. Sincronizando datos guardados sin conexión...");
+                let failedQueue = [];
+                for (let item of queue) {
+                    try {
+                        const response = await fetch(SCRIPT_URL, {
+                            method: 'POST',
+                            body: JSON.stringify(item)
+                        });
+                        if (!response.ok) throw new Error("Fallo de conexión");
+                    } catch (e) {
+                        failedQueue.push(item);
+                    }
+                }
+                localStorage.setItem('offlineQueue', JSON.stringify(failedQueue));
+                if (failedQueue.length === 0) alert("✅ Sincronización completada.");
+            }
+        });
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // Usuario autenticado, consultar su nombre en la base de datos
-                const docRef = doc(db, "usuarios", user.uid);
-                const docSnap = await getDoc(docRef);
-                
-                if (docSnap.exists()) {
-                    datosUsuarioLogueado = docSnap.data();
-                    document.getElementById('infoUsuarioActual').innerText = `${datosUsuarioLogueado.rol}: ${datosUsuarioLogueado.nombre}`;
+                let storedUser = localStorage.getItem('user_' + user.uid);
+                if (storedUser) {
+                    datosUsuarioLogueado = JSON.parse(storedUser);
                 } else {
-                    datosUsuarioLogueado = { nombre: user.email, rol: "Usuario" };
-                    document.getElementById('infoUsuarioActual').innerText = user.email;
+                    try {
+                        const res = await fetch(`${SCRIPT_URL}?action=getUsuario&uid=${user.uid}&t=${Date.now()}`);
+                        const data = await res.json();
+                        if (data.existe) {
+                            datosUsuarioLogueado = data.usuario;
+                            localStorage.setItem('user_' + user.uid, JSON.stringify(data.usuario));
+                        } else {
+                            datosUsuarioLogueado = { nombre: user.email, rol: "Usuario" };
+                        }
+                    } catch (e) {
+                        datosUsuarioLogueado = { nombre: user.email, rol: "Usuario (Modo Offline)" };
+                    }
                 }
 
+                document.getElementById('infoUsuarioActual').innerText = `${datosUsuarioLogueado.rol}: ${datosUsuarioLogueado.nombre}`;
                 document.getElementById('infoUsuarioActual').classList.remove('hidden');
                 document.getElementById('btnCandado').classList.remove('hidden');
                 document.getElementById('btnSalir').classList.remove('hidden');
@@ -220,14 +270,12 @@
                 cargarGradosDisponibles();
                 mostrarSeccion('asistencia');
             } else {
-                // No autenticado
                 datosUsuarioLogueado = null;
                 document.getElementById('infoUsuarioActual').classList.add('hidden');
                 document.getElementById('btnCandado').classList.add('hidden');
                 document.getElementById('btnSalir').classList.add('hidden');
                 document.getElementById('menuNavegacion').classList.add('hidden');
                 
-                // Ocultar todo y mostrar login
                 const secciones = ['asistencia', 'historial', 'resumen', 'admin'];
                 secciones.forEach(sec => document.getElementById(`sec-${sec}`).classList.add('hidden'));
                 document.getElementById('sec-login').classList.remove('hidden');
@@ -236,31 +284,18 @@
 
         window.iniciarSesion = async (e) => {
             e.preventDefault();
-            const email = document.getElementById('loginEmail').value;
-            const pass = document.getElementById('loginPass').value;
             const btn = document.getElementById('btnLogin');
-            
-            btn.innerHTML = "Verificando...";
-            btn.disabled = true;
-
+            btn.innerHTML = "Verificando..."; btn.disabled = true;
             try {
-                await signInWithEmailAndPassword(auth, email, pass);
+                await signInWithEmailAndPassword(auth, document.getElementById('loginEmail').value, document.getElementById('loginPass').value);
             } catch (error) {
                 alert("Error al ingresar: Verifica tu correo o contraseña.");
-                console.error(error);
             } finally {
-                btn.innerHTML = "Ingresar";
-                btn.disabled = false;
+                btn.innerHTML = "Ingresar"; btn.disabled = false;
             }
         };
 
-        window.cerrarSesion = () => {
-            signOut(auth).then(() => {
-                // Limpiar caché al salir
-                cacheGrados = [];
-                cacheEstudiantes = {};
-            });
-        };
+        window.cerrarSesion = () => signOut(auth);
 
         window.crearUsuario = async (e) => {
             e.preventDefault();
@@ -270,180 +305,167 @@
             const rol = document.getElementById('nuevoRol').value;
             const btn = document.getElementById('btnCrearUsuario');
 
-            btn.innerHTML = "Creando...";
-            btn.disabled = true;
+            btn.innerHTML = "Creando..."; btn.disabled = true;
 
             try {
-                // Creamos el usuario en la app secundaria para no cerrar la sesión actual del director
                 const userCredential = await createUserWithEmailAndPassword(adminAuth, email, pass);
                 const nuevoUsuario = userCredential.user;
                 
-                // Guardamos sus datos (nombre y rol) en la colección "usuarios" de la app principal
-                await setDoc(doc(db, "usuarios", nuevoUsuario.uid), {
-                    nombre: nombre,
-                    email: email,
-                    rol: rol,
-                    fecha_creacion: serverTimestamp()
+                const payload = { action: 'addUsuario', uid: nuevoUsuario.uid, nombre: nombre, email: email, rol: rol };
+                
+                const response = await fetch(SCRIPT_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify(payload) 
                 });
 
-                // Cerramos sesión en la app secundaria
+                if (!response.ok) throw new Error("Error en el servidor");
+                
                 await signOut(adminAuth);
-
                 alert(`Cuenta de ${rol} creada con éxito para ${nombre}.`);
                 document.getElementById('formCrearUsuario').reset();
             } catch (error) {
-                alert("Error al crear cuenta. Es posible que el correo ya exista o la clave sea muy corta.");
+                alert("Error al crear cuenta o comunicarnos con Google Sheets.");
                 console.error(error);
             } finally {
-                btn.innerHTML = "Crear Cuenta";
-                btn.disabled = false;
+                btn.innerHTML = "Crear Cuenta"; btn.disabled = false;
             }
         };
 
-        // --- NAVEGACIÓN ---
         window.pedirPasswordAdmin = () => {
-            const password = prompt("🔐 Introduce la contraseña maestra de administrador:");
-            if (password === "admin123") {
+            if (prompt("🔐 Introduce la contraseña maestra:") === "admin123") {
                 document.getElementById('tab-admin').classList.remove('hidden');
                 mostrarSeccion('admin');
-            } else if (password !== null) {
-                alert("Contraseña incorrecta.");
-            }
+            } else alert("Incorrecta.");
         };
 
         window.mostrarSeccion = (seccion) => {
-            const secciones = ['asistencia', 'historial', 'resumen', 'admin'];
-            secciones.forEach(sec => {
+            ['asistencia', 'historial', 'resumen', 'admin'].forEach(sec => {
                 const elSec = document.getElementById(`sec-${sec}`);
                 const elTab = document.getElementById(`tab-${sec}`);
-                
                 if (sec === seccion) {
                     elSec.classList.remove('hidden');
-                    if(elTab) elTab.classList.replace('border-transparent', 'border-indigo-600');
-                    if(elTab) elTab.classList.replace('text-slate-500', 'text-indigo-700');
+                    if(elTab) elTab.className = "flex-1 py-4 text-xs sm:text-sm font-bold border-b-4 border-indigo-600 text-indigo-700 transition-colors";
                 } else {
                     if (elSec) elSec.classList.add('hidden');
-                    if (elTab) {
-                        elTab.classList.replace('border-indigo-600', 'border-transparent');
-                        elTab.classList.replace('text-indigo-700', 'text-slate-500');
-                    }
+                    if (elTab) elTab.className = "flex-1 py-4 text-xs sm:text-sm font-bold border-b-4 border-transparent text-slate-500 hover:text-slate-700 transition-colors";
                 }
             });
             if (seccion === 'historial') cargarHistorial();
             if (seccion === 'resumen') cargarResumen();
         };
 
-        // --- LÓGICA DE ASISTENCIA Y CACHÉ ---
-
         window.toggleEstado = (index) => {
-            const checkAsistencia = document.getElementById(`check-${index}`);
-            const contExcusa = document.getElementById(`excusa-container-${index}`);
-            const contTarde = document.getElementById(`tarde-container-${index}`);
+            const check = document.getElementById(`check-${index}`);
             const fila = document.getElementById(`row-${index}`);
-            
-            if (!checkAsistencia.checked) {
-                contExcusa.classList.remove('hidden');
-                contTarde.classList.add('hidden');
+            if (!check.checked) {
+                document.getElementById(`excusa-container-${index}`).classList.remove('hidden');
+                document.getElementById(`tarde-container-${index}`).classList.add('hidden');
                 document.getElementById(`tarde-check-${index}`).checked = false; 
-                fila.classList.replace('bg-white', 'bg-red-50');
-                fila.classList.replace('border-slate-200', 'border-red-200');
+                fila.classList.replace('bg-white', 'bg-red-50'); fila.classList.replace('border-slate-200', 'border-red-200');
             } else {
-                contExcusa.classList.add('hidden');
-                contTarde.classList.remove('hidden');
+                document.getElementById(`excusa-container-${index}`).classList.add('hidden');
+                document.getElementById(`tarde-container-${index}`).classList.remove('hidden');
                 document.getElementById(`excusa-check-${index}`).checked = false; 
-                fila.classList.replace('bg-red-50', 'bg-white');
-                fila.classList.replace('border-red-200', 'border-slate-200');
+                fila.classList.replace('bg-red-50', 'bg-white'); fila.classList.replace('border-red-200', 'border-slate-200');
             }
         };
 
         async function cargarGradosDisponibles() {
             if (cacheGrados.length > 0) return poblarSelectoresGrados(cacheGrados);
+            
+            let listado = [];
+            
+            try {
+                let datosLocales = localStorage.getItem('db_estudiantes');
+                listado = datosLocales ? JSON.parse(datosLocales) : [];
+                if (!Array.isArray(listado)) listado = [];
+            } catch(e) { listado = []; }
 
             try {
-                const snapshot = await getDocs(collection(db, "estudiantes"));
-                const gradosSet = new Set();
-                snapshot.forEach(doc => gradosSet.add(doc.data().grado));
-                cacheGrados = Array.from(gradosSet).sort();
-                poblarSelectoresGrados(cacheGrados);
-            } catch (e) { console.error("Error cargando grados:", e); }
+                if (navigator.onLine) {
+                    const res = await fetch(`${SCRIPT_URL}?action=getEstudiantes&t=${Date.now()}`);
+                    const textData = await res.text();
+                    
+                    let serverData = [];
+                    try { serverData = JSON.parse(textData); } 
+                    catch(err) { throw new Error("Respuesta no válida de Sheets"); }
+                    
+                    if (Array.isArray(serverData)) {
+                        listado = serverData.map(est => {
+                            est.grado = window.formatearGradoReal(est.grado);
+                            return est;
+                        });
+                        localStorage.setItem('db_estudiantes', JSON.stringify(listado));
+                    }
+                }
+            } catch (e) { 
+                console.error("Usando estudiantes almacenados localmente", e); 
+            }
+            
+            cacheEstudiantes = {};
+            const gradosSet = new Set();
+            
+            listado.forEach(est => {
+                if (!est || !est.grado) return;
+                gradosSet.add(est.grado);
+                if(!cacheEstudiantes[est.grado]) cacheEstudiantes[est.grado] = [];
+                cacheEstudiantes[est.grado].push(est);
+            });
+            
+            for(let g in cacheEstudiantes) {
+                cacheEstudiantes[g].sort((a,b) => (a.nombre || "").localeCompare(b.nombre || ""));
+            }
+
+            cacheGrados = Array.from(gradosSet).sort();
+            poblarSelectoresGrados(cacheGrados);
         }
 
         function poblarSelectoresGrados(grados) {
-            const sAsist = document.getElementById("selectorGrado");
-            const sHist = document.getElementById("filtroGradoHistorial");
-            const sRes = document.getElementById("filtroGradoResumen");
-            
-            sAsist.innerHTML = '<option value="">-- Toca para elegir un grado --</option>';
-            sHist.innerHTML = '<option value="">Todos los grados</option>';
-            sRes.innerHTML = '<option value="">-- Selecciona un grado --</option>';
-            
-            grados.forEach(g => {
-                sAsist.innerHTML += `<option value="${g}">${g}</option>`;
-                sHist.innerHTML += `<option value="${g}">${g}</option>`;
-                sRes.innerHTML += `<option value="${g}">${g}</option>`;
-            });
+            const sels = [document.getElementById("selectorGrado"), document.getElementById("filtroGradoHistorial"), document.getElementById("filtroGradoResumen")];
+            sels[0].innerHTML = '<option value="">-- Toca para elegir un grado --</option>';
+            sels[1].innerHTML = '<option value="">Todos los grados</option>';
+            sels[2].innerHTML = '<option value="">-- Selecciona un grado --</option>';
+            grados.forEach(g => sels.forEach(s => s.innerHTML += `<option value="${g}">${g}</option>`));
         }
 
         window.cambiarGrupo = async () => {
             const grado = document.getElementById("selectorGrado").value;
-            const container = document.getElementById("contenedorEstudiantes");
             const area = document.getElementById("areaLista");
             const msg = document.getElementById("mensajeVacio");
-
             if (!grado) { 
-                area.classList.add("hidden"); msg.classList.remove("hidden"); return; 
+                area.classList.add("hidden"); 
+                msg.classList.remove("hidden"); 
+                return; 
             }
-            
-            area.classList.remove("hidden"); msg.classList.add("hidden");
+            area.classList.remove("hidden"); 
+            msg.classList.add("hidden");
             document.getElementById("tituloGrupo").innerText = `Grupo: ${grado}`;
             document.getElementById("labelBotonGrado").innerText = grado;
             
-            // Usar Caché para evitar descargas innecesarias
-            if (cacheEstudiantes[grado]) {
-                pintarListaEstudiantes(cacheEstudiantes[grado]);
-                return;
-            }
-
-            container.innerHTML = `<p class="text-center text-sm py-10 text-indigo-500 font-bold animate-pulse">Cargando...</p>`;
-            
-            try {
-                const q = query(collection(db, "estudiantes"), where("grado", "==", grado));
-                const snapshot = await getDocs(q);
-                let lista = [];
-                snapshot.forEach(d => lista.push(d.data()));
-                lista.sort((a, b) => a.nombre.localeCompare(b.nombre));
-                
-                // Guardar en caché
-                cacheEstudiantes[grado] = lista;
-                pintarListaEstudiantes(lista);
-            } catch (e) { console.error(e); }
+            let lista = cacheEstudiantes[grado] || [];
+            pintarListaEstudiantes(lista);
         }
 
         function pintarListaEstudiantes(lista) {
             const container = document.getElementById("contenedorEstudiantes");
             document.getElementById("contador").innerText = `${lista.length} Alumnos`;
             container.innerHTML = "";
-            
             if (lista.length === 0) return container.innerHTML = `<p class="text-center text-sm py-10">Vacío.</p>`;
 
             lista.forEach((est, index) => {
-                const idCheck = `check-${index}`;
-                const idExcusa = `excusa-check-${index}`;
-                const idTarde = `tarde-check-${index}`;
-                
                 container.innerHTML += `
                     <div id="row-${index}" class="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm transition-colors duration-200">
-                        <label for="${idCheck}" class="flex items-center justify-between cursor-pointer">
+                        <label for="check-${index}" class="flex items-center justify-between cursor-pointer">
                             <span class="font-semibold text-slate-700 text-sm w-3/4 select-none">${est.nombre}</span>
-                            <input type="checkbox" id="${idCheck}" checked class="asistencia-check w-7 h-7 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer" data-nombre="${est.nombre}" data-grado="${est.grado}" data-index="${index}" onchange="toggleEstado(${index})">
+                            <input type="checkbox" id="check-${index}" checked class="asistencia-check w-7 h-7 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer" data-nombre="${est.nombre}" data-grado="${est.grado}" data-index="${index}" onchange="toggleEstado(${index})">
                         </label>
                         <div id="excusa-container-${index}" class="hidden mt-3 pt-3 border-t border-red-100 flex items-center justify-between">
-                            <label for="${idExcusa}" class="text-xs font-bold text-red-600 uppercase cursor-pointer">¿Presenta excusa?</label>
-                            <input type="checkbox" id="${idExcusa}" class="w-5 h-5 rounded border-red-300 text-red-600 cursor-pointer">
+                            <label for="excusa-check-${index}" class="text-xs font-bold text-red-600 uppercase cursor-pointer">¿Presenta excusa?</label>
+                            <input type="checkbox" id="excusa-check-${index}" class="w-5 h-5 rounded border-red-300 text-red-600 cursor-pointer">
                         </div>
                         <div id="tarde-container-${index}" class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
-                            <label for="${idTarde}" class="text-xs font-bold text-orange-500 uppercase cursor-pointer">¿Llegó tarde?</label>
-                            <input type="checkbox" id="${idTarde}" class="w-5 h-5 rounded border-orange-300 text-orange-500 cursor-pointer">
+                            <label for="tarde-check-${index}" class="text-xs font-bold text-orange-500 uppercase cursor-pointer">¿Llegó tarde?</label>
+                            <input type="checkbox" id="tarde-check-${index}" class="w-5 h-5 rounded border-orange-300 text-orange-500 cursor-pointer">
                         </div>
                     </div>`;
             });
@@ -455,174 +477,214 @@
             let ausentes = [], tardanzas = [];
             
             checks.forEach(c => { 
-                const index = c.dataset.index;
+                const idx = c.dataset.index;
                 if (!c.checked) { 
-                    const tieneExcusa = document.getElementById(`excusa-check-${index}`)?.checked;
+                    const tieneExcusa = document.getElementById(`excusa-check-${idx}`)?.checked;
                     ausentes.push(tieneExcusa ? `${c.dataset.nombre} (Con excusa)` : c.dataset.nombre); 
                 } else {
-                    if (document.getElementById(`tarde-check-${index}`)?.checked) tardanzas.push(c.dataset.nombre);
+                    if (document.getElementById(`tarde-check-${idx}`)?.checked) tardanzas.push(c.dataset.nombre);
                 }
             });
 
-            const btnGuardar = document.getElementById("btnGuardar");
-            btnGuardar.disabled = true; btnGuardar.innerHTML = "Guardando...";
+            const btn = document.getElementById("btnGuardar");
+            document.getElementById("btnGuardarTexto").innerText = "Guardando...";
+            btn.disabled = true; 
+
+            const ahora = new Date();
+            const payload = {
+                action: 'addReporte',
+                fecha: ahora.toISOString(),
+                fecha_f: ahora.toLocaleDateString('es-CO'),
+                hora_f: ahora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true }),
+                grado: gradoActual,
+                ausentes: ausentes,
+                tardanzas: tardanzas,
+                total: ausentes.length,
+                total_tardanzas: tardanzas.length,
+                tomado_por: datosUsuarioLogueado ? `${datosUsuarioLogueado.nombre} (${datosUsuarioLogueado.rol})` : "Desconocido"
+            };
 
             try {
-                const ahora = new Date();
-                const hora = ahora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true });
-                const tomadoPorTexto = datosUsuarioLogueado ? `${datosUsuarioLogueado.nombre} (${datosUsuarioLogueado.rol})` : "Usuario Desconocido";
+                if (!navigator.onLine) {
+                    let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+                    queue.push(payload);
+                    localStorage.setItem('offlineQueue', JSON.stringify(queue));
+                    alert("📵 Sin conexión a internet. El reporte se guardó localmente.");
+                } else {
+                    const response = await fetch(SCRIPT_URL, { 
+                        method: 'POST', 
+                        body: JSON.stringify(payload) 
+                    });
+                    if (!response.ok) throw new Error("Fallo en servidor");
+                    alert("¡Reporte guardado con éxito!");
+                }
+                
+                cacheReportes.push(payload);
+                localStorage.setItem('db_reportes', JSON.stringify(cacheReportes));
 
-                await addDoc(collection(db, "reportes_asistencia"), {
-                    fecha: serverTimestamp(),
-                    fecha_f: ahora.toLocaleDateString('es-CO'),
-                    hora_f: hora,
-                    grado: gradoActual,
-                    ausentes: ausentes,
-                    tardanzas: tardanzas,
-                    total: ausentes.length,
-                    total_tardanzas: tardanzas.length,
-                    tomado_por: tomadoPorTexto // ¡Guardamos quién tomó la lista!
-                });
-
-                alert(navigator.onLine ? "¡Reporte guardado con éxito!" : "📵 Guardado localmente. Se subirá al tener internet.");
-                document.getElementById("selectorGrado").value = "";
-                cambiarGrupo();
             } catch (error) {
-                alert("Hubo un error al guardar.");
+                let queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+                queue.push(payload);
+                localStorage.setItem('offlineQueue', JSON.stringify(queue));
+                alert("Hubo un error de conexión con Google Sheets. El reporte se guardó localmente.");
             } finally {
-                btnGuardar.disabled = false; btnGuardar.innerHTML = "Guardar";
+                document.getElementById("btnGuardarTexto").innerText = "Guardar";
+                btn.disabled = false;
+                
+                document.getElementById("selectorGrado").value = "";
+                window.cambiarGrupo();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         };
 
-        // --- LÓGICA DEL HISTORIAL (Solo 7 días) ---
-
         window.cargarHistorial = async () => {
             const container = document.getElementById("listaHistorial");
-            const gradoFiltro = document.getElementById("filtroGradoHistorial").value;
             container.innerHTML = `<p class="text-center text-sm py-10 text-indigo-500 font-bold animate-pulse">Consultando...</p>`;
             
             try {
-                // Optimización: Solo consultar los reportes de los últimos 7 días
-                const fechaLimite = new Date();
-                fechaLimite.setDate(fechaLimite.getDate() - 7);
+                let datosLocales = localStorage.getItem('db_reportes');
+                cacheReportes = datosLocales ? JSON.parse(datosLocales) : [];
+                if (!Array.isArray(cacheReportes)) cacheReportes = [];
+            } catch(e) { 
+                cacheReportes = []; 
+            }
 
-                const q = query(collection(db, "reportes_asistencia"), where("fecha", ">=", fechaLimite));
-                const snapshot = await getDocs(q);
+            try {
+                if (navigator.onLine) {
+                    const res = await fetch(`${SCRIPT_URL}?action=getReportes&t=${Date.now()}`);
+                    const textData = await res.text();
+                    
+                    let serverData = [];
+                    try { 
+                        serverData = JSON.parse(textData); 
+                    } catch (err) {
+                        console.warn("Respuesta de Sheets ignorada (No es JSON válido).");
+                        throw new Error("Formato inválido");
+                    }
+                    
+                    if (Array.isArray(serverData)) {
+                        cacheReportes = serverData.map(rep => {
+                            rep.grado = window.formatearGradoReal(rep.grado);
+                            rep.fecha_f = window.formatearFechaLimpia(rep.fecha_f); 
+                            return rep;
+                        });
+                        localStorage.setItem('db_reportes', JSON.stringify(cacheReportes));
+                    }
+                }
+            } catch (e) { 
+                console.error("Usando historial almacenado localmente.", e); 
+            }
+
+            cargarHistorialLocamente();
+        }
+
+        window.cargarHistorialLocamente = () => {
+            const container = document.getElementById("listaHistorial");
+            const gradoFiltro = document.getElementById("filtroGradoHistorial").value;
+            
+            let reportes = [...cacheReportes];
+            reportes.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+            container.innerHTML = "";
+            let reportesMostrados = 0;
+
+            reportes.forEach((rep) => {
+                let gradoRep = window.formatearGradoReal(rep.grado);
+                if (gradoFiltro !== "" && gradoRep !== gradoFiltro) return;
                 
-                let reportes = [];
-                snapshot.forEach(d => reportes.push({ id: d.id, ...d.data() }));
-                // Ordenar del más nuevo al más viejo localmente
-                reportes.sort((a, b) => (b.fecha?.seconds || 0) - (a.fecha?.seconds || 0));
+                reportesMostrados++;
+                
+                let fechaRep = window.formatearFechaLimpia(rep.fecha_f);
+                let ausentesArr = window.arrSeguro(rep.ausentes);
+                let tardanzasArr = window.arrSeguro(rep.tardanzas);
 
-                container.innerHTML = "";
-                let reportesMostrados = 0;
+                const colorBorde = rep.total === 0 ? 'border-l-emerald-500' : 'border-l-rose-500';
+                const colorEtiq = rep.total === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700';
+                
+                const strAus = ausentesArr.length > 0 ? ausentesArr.join("\n") : "Ninguna (Todos presentes)";
+                const strTar = tardanzasArr.length > 0 ? `\n\n*Llegadas tarde:*\n${tardanzasArr.join("\n")}` : "";
 
-                reportes.forEach((rep) => {
-                    if (gradoFiltro !== "" && rep.grado !== gradoFiltro) return;
-                    
-                    reportesMostrados++;
-                    const colorBorde = rep.total === 0 ? 'border-l-emerald-500' : 'border-l-rose-500';
-                    const colorEtiq = rep.total === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700';
-                    const txtEtiq = rep.total === 0 ? 'Perfecta' : `${rep.total} Faltas`;
-                    
-                    const strAus = rep.ausentes?.length > 0 ? rep.ausentes.join("\n") : "Ninguna (Todos presentes)";
-                    const strTar = rep.tardanzas?.length > 0 ? `\n\n*Llegadas tarde:*\n${rep.tardanzas.join("\n")}` : "";
-                    const tomadoPor = rep.tomado_por || 'Desconocido';
-
-                    container.innerHTML += `
-                        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm border-l-4 ${colorBorde}">
-                            <div class="flex justify-between items-start mb-2">
-                                <div>
-                                    <h3 class="text-base font-bold text-slate-800">${rep.grado}</h3>
-                                    <p class="text-[10px] text-slate-500 mt-0.5">${rep.fecha_f} - ${rep.hora_f}</p>
-                                    <p class="text-[10px] text-indigo-500 font-bold mt-1">📋 Por: ${tomadoPor}</p>
-                                </div>
-                                <div class="flex flex-col items-end gap-1">
-                                    <span class="text-[10px] ${colorEtiq} px-2.5 py-1 rounded-full font-bold uppercase">${txtEtiq}</span>
-                                    ${rep.total_tardanzas > 0 ? `<span class="text-[10px] bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full font-bold uppercase">${rep.total_tardanzas} Tardes</span>` : ''}
-                                </div>
+                container.innerHTML += `
+                    <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm border-l-4 ${colorBorde}">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800">${gradoRep}</h3>
+                                <p class="text-[10px] text-slate-500 mt-0.5">${fechaRep || '-'} - ${rep.hora_f || '-'}</p>
+                                <p class="text-[10px] text-indigo-500 font-bold mt-1">📋 Por: ${rep.tomado_por || 'Desconocido'}</p>
                             </div>
-                            <div class="bg-slate-50 rounded-xl p-3 mb-2 text-xs text-slate-600 whitespace-pre-line leading-relaxed">
-                                <b>Ausentes:</b><br>${strAus}
-                                ${rep.total_tardanzas > 0 ? `<br><br><b>Llegadas Tarde:</b><br>${rep.tardanzas.join("<br>")}` : ''}
+                            <div class="flex flex-col items-end gap-1">
+                                <span class="text-[10px] ${colorEtiq} px-2.5 py-1 rounded-full font-bold uppercase">${rep.total===0?'Perfecta':rep.total+' Faltas'}</span>
+                                ${rep.total_tardanzas > 0 ? `<span class="text-[10px] bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full font-bold uppercase">${rep.total_tardanzas} Tardes</span>` : ''}
                             </div>
-                            <button onclick="copiar('${rep.fecha_f}', '${rep.hora_f}', '${rep.grado}', \`${strAus+strTar}\`, '${tomadoPor}')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2 rounded-lg">
-                                Copiar Resumen
-                            </button>
-                        </div>`;
-                });
+                        </div>
+                        <div class="bg-slate-50 rounded-xl p-3 mb-2 text-xs text-slate-600 whitespace-pre-line leading-relaxed">
+                            <b>Ausentes:</b><br>${strAus.replace(/\n/g, '<br>')}
+                            ${strTar.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>')}
+                        </div>
+                        <button onclick="copiar('${fechaRep}', '${rep.hora_f}', '${gradoRep}', \`${strAus+strTar}\`, '${rep.tomado_por}')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2 rounded-lg">
+                            Copiar Resumen
+                        </button>
+                    </div>`;
+            });
 
-                if (reportesMostrados === 0) container.innerHTML = `<p class="text-center text-slate-400 text-sm py-10">No hay reportes en los últimos 7 días.</p>`;
-            } catch (e) { console.error(e); }
+            if (reportesMostrados === 0) container.innerHTML = `<p class="text-center text-slate-400 text-sm py-10">No hay reportes disponibles.</p>`;
         }
 
         window.copiar = (f, h, g, l, r) => {
-            const t = `📌 *REPORTE ASISTENCIA*\n🏫 Grado: ${g}\n📅 Fecha: ${f}\n🕒 Hora: ${h}\n👩‍🏫 Reporta: ${r}\n\n*Ausentes:*\n${l}`;
-            navigator.clipboard.writeText(t).then(() => alert("Reporte copiado."));
+            navigator.clipboard.writeText(`📌 *REPORTE ASISTENCIA*\n🏫 Grado: ${g}\n📅 Fecha: ${f}\n🕒 Hora: ${h}\n👩‍🏫 Reporta: ${r}\n\n*Ausentes/Tardes:*\n${l}`).then(() => alert("Copiado."));
         };
 
-        // --- LÓGICA DE RESUMEN Y ADMIN MANTENIDA IGUAL ---
         window.cargarResumen = async () => {
             const grado = document.getElementById("filtroGradoResumen").value;
             const container = document.getElementById("listaResumen");
-            
             if (!grado) return container.innerHTML = `<p class="text-center text-slate-400 text-sm py-10">Selecciona un grado.</p>`;
-            container.innerHTML = `<p class="text-center text-sm py-10 text-indigo-500 font-bold animate-pulse">Calculando...</p>`;
 
-            try {
-                // Se usa el caché de estudiantes para ahorrar descargas
-                let listaEstudiantes = cacheEstudiantes[grado];
-                if (!listaEstudiantes) {
-                    const snapEst = await getDocs(query(collection(db, "estudiantes"), where("grado", "==", grado)));
-                    listaEstudiantes = [];
-                    snapEst.forEach(d => listaEstudiantes.push(d.data()));
-                    cacheEstudiantes[grado] = listaEstudiantes;
-                }
+            let estudiantesStats = {};
+            (cacheEstudiantes[grado] || []).forEach(data => {
+                estudiantesStats[data.nombre] = { codigo: data.codigo_zipgrade || '-', faltas: 0, tardanzas: 0 };
+            });
 
-                let estudiantesStats = {};
-                listaEstudiantes.forEach(data => {
-                    estudiantesStats[data.nombre] = { codigo: data.codigo_zipgrade || '-', faltas: 0, tardanzas: 0 };
-                });
+            if (!Array.isArray(cacheReportes)) cacheReportes = [];
 
-                const qRep = query(collection(db, "reportes_asistencia"), where("grado", "==", grado));
-                const snapRep = await getDocs(qRep);
-                
-                snapRep.forEach(d => {
-                    const data = d.data();
-                    if(data.ausentes) data.ausentes.forEach(aus => {
-                        const n = aus.replace(" (Con excusa)", "");
+            cacheReportes.forEach(rep => {
+                let gradoRep = window.formatearGradoReal(rep.grado);
+                if (gradoRep === grado) {
+                    
+                    let ausentesArr = window.arrSeguro(rep.ausentes);
+                    let tardanzasArr = window.arrSeguro(rep.tardanzas);
+
+                    ausentesArr.forEach(aus => {
+                        if (!aus) return;
+                        const n = aus.replace(" (Con excusa)", "").trim();
                         if (estudiantesStats[n]) estudiantesStats[n].faltas++;
                     });
-                    if(data.tardanzas) data.tardanzas.forEach(tar => {
-                        if (estudiantesStats[tar]) estudiantesStats[tar].tardanzas++;
+                    
+                    tardanzasArr.forEach(tar => {
+                        if (!tar) return;
+                        const n = tar.trim();
+                        if (estudiantesStats[n]) estudiantesStats[n].tardanzas++;
                     });
-                });
+                }
+            });
 
-                container.innerHTML = "";
-                const nombres = Object.keys(estudiantesStats).sort();
-                if (nombres.length === 0) return container.innerHTML = `<p class="text-center text-slate-400 text-sm py-10">Vacío.</p>`;
-
-                nombres.forEach(nom => {
-                    const st = estudiantesStats[nom];
-                    container.innerHTML += `
-                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
-                            <div class="w-2/3">
-                                <h4 class="font-bold text-slate-700 text-sm leading-tight">${nom}</h4>
-                                <p class="text-xs text-slate-500 mt-1">Zipgrade: <span class="font-mono bg-indigo-50 px-1.5 py-0.5 rounded text-indigo-700 font-bold">${st.codigo}</span></p>
-                            </div>
-                            <div class="flex gap-4 text-center">
-                                <div>
-                                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Faltas</p>
-                                    <p class="font-bold text-lg text-red-500 leading-none mt-1">${st.faltas}</p>
-                                </div>
-                                <div>
-                                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Tardes</p>
-                                    <p class="font-bold text-lg text-orange-500 leading-none mt-1">${st.tardanzas}</p>
-                                </div>
-                            </div>
-                        </div>`;
-                });
-            } catch(e) { console.error(e); }
+            container.innerHTML = "";
+            const nombres = Object.keys(estudiantesStats).sort();
+            nombres.forEach(nom => {
+                const st = estudiantesStats[nom];
+                container.innerHTML += `
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
+                        <div class="w-2/3">
+                            <h4 class="font-bold text-slate-700 text-sm leading-tight">${nom}</h4>
+                            <p class="text-xs text-slate-500 mt-1">Zipgrade: <span class="font-mono bg-indigo-50 px-1.5 py-0.5 rounded text-indigo-700 font-bold">${st.codigo}</span></p>
+                        </div>
+                        <div class="flex gap-4 text-center">
+                            <div><p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Faltas</p><p class="font-bold text-lg text-red-500">${st.faltas}</p></div>
+                            <div><p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Tardes</p><p class="font-bold text-lg text-orange-500">${st.tardanzas}</p></div>
+                        </div>
+                    </div>`;
+            });
+            
+            if (nombres.length === 0) container.innerHTML = `<p class="text-center text-slate-400 text-sm py-10">No hay estudiantes en este grado.</p>`;
         };
 
         window.importarExcel = async () => {
@@ -634,45 +696,84 @@
             try {
                 const data = await fileInput.files[0].arrayBuffer();
                 const workbook = XLSX.read(data);
-                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                let contador = 0;
                 
+                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: "", raw: false });
+                
+                let aInsertar = [];
                 for (let fila of jsonData) {
-                    let fn = fila['First Name'] || fila['First name'] || fila.Nombres || fila.Nombre || '';
-                    let ln = fila['Last Name'] || fila['Last name'] || fila.Apellidos || fila.Apellido || '';
-                    let gr = fila.Grado || fila.grado || fila.Curso || fila.curso || '';
-                    let zip = fila.Zipgrade || fila.zipgrade || fila.Codigo || fila['Código'] || fila.codigo || '';
+                    const filaNormalizada = {};
+                    for (let key in fila) {
+                        filaNormalizada[key.trim().toLowerCase()] = fila[key];
+                    }
+
+                    let fn = filaNormalizada['first name'] || filaNormalizada['nombre'] || '';
+                    let ln = filaNormalizada['last name'] || filaNormalizada['apellido'] || '';
+                    let gr = filaNormalizada['grado'] || filaNormalizada['grade'] || filaNormalizada['curso'] || '';
+                    let zip = filaNormalizada['zipgrade id'] || filaNormalizada['id'] || '';
                     
-                    let nomCompleto = ln && fn ? `${ln} ${fn}` : (ln || fn || fila.Estudiante);
-                    if (nomCompleto && gr) {
-                        await addDoc(collection(db, "estudiantes"), { 
+                    let grStr = window.formatearGradoReal(gr);
+
+                    if (grStr.match(/^(\d{1,2})-(ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)/i)) {
+                        const meses = { 'ene':1, 'feb':2, 'mar':3, 'abr':4, 'may':5, 'jun':6, 'jul':7, 'ago':8, 'sep':9, 'oct':10, 'nov':11, 'dic':12 };
+                        let match = grStr.match(/^(\d{1,2})-(ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)/i);
+                        grStr = `${match[1]}-${meses[match[2].toLowerCase()]}`;
+                    } else if (grStr.match(/^(\d{1,2})\/(\d{1,2})\/\d{2,4}$/)) {
+                        let match = grStr.match(/^(\d{1,2})\/(\d{1,2})\/\d{2,4}$/);
+                        grStr = `${parseInt(match[1])}-${parseInt(match[2])}`;
+                    }
+
+                    let nomCompleto = `${ln} ${fn}`.trim();
+                    if (!nomCompleto && (ln || fn)) nomCompleto = ln || fn;
+                    
+                    if (nomCompleto && grStr) {
+                        aInsertar.push({ 
                             nombre: String(nomCompleto).trim().toUpperCase(), 
-                            grado: String(gr).trim().toUpperCase(),
-                            codigo_zipgrade: String(zip).trim()
+                            grado: grStr.toUpperCase(), 
+                            codigo_zipgrade: String(zip).trim() 
                         });
-                        contador++;
                     }
                 }
-                alert(`¡Se cargaron ${contador} estudiantes!`);
-                cacheGrados = []; cacheEstudiantes = {}; // Limpiamos caché
-                cargarGradosDisponibles();
+
+                if (aInsertar.length === 0) {
+                    alert("No se encontraron datos en el Excel. Verifica que las columnas se llamen: Nombre, Apellido y Grado.");
+                    btn.disabled = false; btn.innerHTML = "Cargar a Google Sheets"; fileInput.value = '';
+                    return;
+                }
+
+                const response = await fetch(SCRIPT_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ action: 'addEstudiantes', estudiantes: aInsertar }) 
+                });
+
+                if (!response.ok) throw new Error("Fallo de red");
+
+                alert(`¡Se procesaron ${aInsertar.length} estudiantes correctamente!`);
+                cacheGrados = []; cacheEstudiantes = {}; localStorage.removeItem('db_estudiantes');
+                
+                location.reload(); 
+                
             } catch (error) {
-                alert("Error al leer el Excel.");
+                console.error(error);
+                alert("Error al enviar a Google Sheets. (Asegúrate de haber configurado los permisos de 'Cualquier Persona').");
             } finally {
-                btn.disabled = false; btn.innerHTML = "Cargar a Firebase"; fileInput.value = '';
+                btn.disabled = false; btn.innerHTML = "Cargar a Google Sheets"; fileInput.value = '';
             }
         };
 
         window.limpiarBaseDatos = async () => {
             if(!confirm("⚠️ ¿Borrar TODOS los estudiantes?")) return;
             if(prompt("Escribe 'admin123' para confirmar:") !== "admin123") return alert("Cancelado.");
-
             try {
-                const snap = await getDocs(collection(db, "estudiantes"));
-                for (const d of snap.docs) await deleteDoc(doc(db, "estudiantes", d.id));
+                const response = await fetch(SCRIPT_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ action: 'clearEstudiantes' }) 
+                });
+                if (!response.ok) throw new Error("Fallo de red");
+
                 alert("Base limpia.");
+                cacheGrados = []; cacheEstudiantes = {}; localStorage.removeItem('db_estudiantes');
                 location.reload();
-            } catch (error) { alert("Error al borrar."); }
+            } catch (error) { alert("Error al conectar con Google Sheets para borrar."); }
         };
     </script>
 </body>
