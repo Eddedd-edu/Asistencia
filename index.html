@@ -102,7 +102,7 @@
         <section id="sec-historial" class="hidden flex-grow flex flex-col overflow-hidden p-5 space-y-4 fade-in bg-slate-50">
             <div class="flex justify-between items-center flex-shrink-0 mb-2">
                 <h2 class="text-xl font-bold text-slate-800">Historial</h2>
-                <button onclick="cargarHistorial()" class="text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg text-sm font-bold uppercase tracking-wider hover:bg-indigo-100 transition-colors">
+                <button onclick="cargarHistorial(true)" class="text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg text-sm font-bold uppercase tracking-wider hover:bg-indigo-100 transition-colors">
                     🔄 Actualizar
                 </button>
             </div>
@@ -642,21 +642,23 @@
             }
         };
 
-        window.cargarHistorial = async () => {
+        window.cargarHistorial = async (forceRefresh = false) => {
             const container = document.getElementById("listaHistorial");
             container.innerHTML = `<p class="text-center text-sm py-10 text-indigo-500 font-bold animate-pulse">Consultando...</p>`;
             
             let usarCache = false;
-            try {
-                let cacheDataStr = localStorage.getItem('db_reportes_cache');
-                if (cacheDataStr) {
-                    let cacheData = JSON.parse(cacheDataStr);
-                    if (Date.now() - cacheData.timestamp < CACHE_EXPIRY) {
-                        cacheReportes = cacheData.data;
-                        usarCache = true;
+            if (!forceRefresh) {
+                try {
+                    let cacheDataStr = localStorage.getItem('db_reportes_cache');
+                    if (cacheDataStr) {
+                        let cacheData = JSON.parse(cacheDataStr);
+                        if (Date.now() - cacheData.timestamp < CACHE_EXPIRY) {
+                            cacheReportes = cacheData.data;
+                            usarCache = true;
+                        }
                     }
-                }
-            } catch(e) { cacheReportes = []; }
+                } catch(e) { cacheReportes = []; }
+            }
 
             if (!usarCache && navigator.onLine) {
                 try {
