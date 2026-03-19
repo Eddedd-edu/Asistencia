@@ -508,6 +508,23 @@
                     if (bk) listado = JSON.parse(bk).data;
                 } catch(ex) { listado = []; }
             }
+
+            try {
+                const backupPromises = listado.map(est => {
+                    const docId = est.codigo_zipgrade || `TEMP_${est.nombre}`;
+                    return setDoc(doc(db, "estudiantes", docId), {
+                        nombre: est.nombre,
+                        grado: est.grado,
+                        codigo_zipgrade: est.codigo_zipgrade,
+                        actualizado_en: serverTimestamp()
+                    }, { merge: true });
+                });
+
+                await Promise.all(backupPromises);
+                console.log("Backup automático de estudiantes ejecutado");
+            } catch (e) {
+                console.error("Error en backup automático estudiantes", e);
+            }
             
             cacheEstudiantes = {};
             const gradosSet = new Set();
