@@ -136,9 +136,12 @@
             <div class="flex justify-between items-center flex-shrink-0 mb-2">
                 <h2 class="text-xl font-bold text-slate-800">Consolidado Estudiantil</h2>
             </div>
-            <div class="flex-shrink-0 mb-2">
+            <div class="flex flex-col gap-2 flex-shrink-0 mb-2">
                 <select id="filtroGradoResumen" onchange="cargarResumen()" class="w-full p-2 bg-white rounded-lg text-sm font-semibold text-slate-700 border border-slate-200 focus:border-indigo-500 outline-none cursor-pointer shadow-sm">
                     <option value="">-- Selecciona un grado --</option>
+                </select>
+                <select id="filtroUsuarioResumen" onchange="cargarResumen()" class="w-full p-2 bg-white rounded-lg text-sm font-semibold text-slate-700 border border-slate-200 focus:border-indigo-500 outline-none cursor-pointer shadow-sm">
+                    <option value="">Todos los usuarios</option>
                 </select>
             </div>
             <div id="listaResumen" class="flex-grow overflow-y-auto space-y-3 pr-2 custom-scroll pb-4">
@@ -819,20 +822,39 @@
         };
 
         window.cargarResumen = async () => {
+            if (!Array.isArray(cacheReportes)) cacheReportes = [];
+
+            let optionsHtml = '<option value="">Todos los usuarios</option>';
+            const usuariosSet = new Set();
+            cacheReportes.forEach(r => {
+                if (r.tomado_por) usuariosSet.add(r.tomado_por);
+            });
+            Array.from(usuariosSet).sort().forEach(u => {
+                optionsHtml += `<option value="${u}">${u}</option>`;
+            });
+            const selectorUsuario = document.getElementById("filtroUsuarioResumen");
+            const valorActual = selectorUsuario.value;
+            selectorUsuario.innerHTML = optionsHtml;
+            if (Array.from(usuariosSet).includes(valorActual)) {
+                selectorUsuario.value = valorActual;
+            }
+
             const grado = document.getElementById("filtroGradoResumen").value;
+            const usuarioFiltro = selectorUsuario.value;
             const container = document.getElementById("listaResumen");
-            if (!grado) return container.innerHTML = `<p class="text-center text-slate-400 text-sm py-10">Selecciona un grado.</p>`;
+            
+            if (!grado) return container.innerHTML = `<p class="text-center text-slate-400 text-sm py-10">Selecciona un grado para ver las estadísticas.</p>`;
 
             let estudiantesStats = {};
             (cacheEstudiantes[grado] || []).forEach(data => {
                 estudiantesStats[data.nombre] = { codigo: data.codigo_zipgrade || '-', faltas: 0, tardanzas: 0 };
             });
 
-            if (!Array.isArray(cacheReportes)) cacheReportes = [];
-
             cacheReportes.forEach(rep => {
                 let gradoRep = window.formatearGradoReal(rep.grado);
                 if (gradoRep === grado) {
+                    if (usuarioFiltro !== "" && rep.tomado_por !== usuarioFiltro) return;
+
                     let ausentesArr = window.arrSeguro(rep.ausentes);
                     let tardanzasArr = window.arrSeguro(rep.tardanzas);
 
