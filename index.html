@@ -62,7 +62,7 @@
                 <button onclick="mostrarSeccion('asistencia')" class="flex-1 py-4 text-sm sm:text-sm font-bold border-b-4 border-indigo-600 text-indigo-700 transition-colors" id="tab-asistencia">Lista</button>
                 <button onclick="mostrarSeccion('historial')" class="flex-1 py-4 text-sm sm:text-sm font-bold border-b-4 border-transparent text-slate-500 hover:text-slate-700 transition-colors" id="tab-historial">Historial</button>
                 <button onclick="mostrarSeccion('resumen')" class="flex-1 py-4 text-sm sm:text-sm font-bold border-b-4 border-transparent text-slate-500 hover:text-slate-700 transition-colors" id="tab-resumen">Resumen</button>
-                <button onclick="verificarAccesoAdmin()" class="hidden flex-1 py-4 text-sm sm:text-sm font-bold border-b-4 border-transparent text-slate-500 hover:text-slate-700 transition-colors" id="tab-admin">⚙️</button>
+                <button onclick="verificarAccesoAdmin()" class="hidden flex-1 py-4 text-sm sm:text-sm font-bold border-b-4 border-transparent text-slate-500 hover:text-slate-700 transition-colors" id="tab-admin">⚙️ Admin</button>
             </nav>
 
             <div class="flex-grow flex flex-col overflow-hidden relative w-full min-h-0">
@@ -173,7 +173,7 @@
                 <section id="sec-admin" class="hidden flex-grow overflow-y-auto p-5 space-y-6 fade-in bg-slate-100 custom-scroll min-h-0">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                            <h2 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">👤 Crear Docente/Monitor</h2>
+                            <h2 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">👤 Crear Usuarios</h2>
                             <form id="formCrearUsuario" onsubmit="crearUsuario(event)" class="space-y-3">
                                 <input type="text" id="nuevoNombre" placeholder="Nombre completo" required class="w-full border rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
                                 <input type="email" id="nuevoEmail" placeholder="Correo electrónico" required class="w-full border rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
@@ -181,6 +181,7 @@
                                 <select id="nuevoRol" class="w-full border rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
                                     <option value="Docente">Rol: Docente</option>
                                     <option value="Monitor">Rol: Monitor</option>
+                                    <option value="Administrador">Rol: Administrador</option>
                                 </select>
                                 <button type="submit" id="btnCrearUsuario" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm py-3 rounded-xl font-bold transition-colors shadow-md">
                                     Crear Cuenta
@@ -207,7 +208,6 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        // Importamos getDoc para leer el rol
         import { getFirestore, collection, addDoc, doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -339,24 +339,25 @@
         window.addEventListener('offline', checkOfflineStatus);
         checkOfflineStatus();
 
-        // 🎯 LÓGICA DE ROLES MEJORADA
+        // 🎯 LÓGICA DE ROLES MEJORADA CON "ADMINISTRADOR"
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 try {
-                    // Consultamos el rol directamente desde Firestore
                     const userDoc = await getDoc(doc(db, "usuarios", user.uid));
                     if (userDoc.exists()) {
                         datosUsuarioLogueado = userDoc.data();
+                        if (!datosUsuarioLogueado.nombre) {
+                            datosUsuarioLogueado.nombre = user.displayName || (user.email ? user.email.split('@')[0] : 'Usuario');
+                        }
                         localStorage.setItem('user_' + user.uid, JSON.stringify(datosUsuarioLogueado));
                     } else {
-                        // Fallback por si la base de datos está vacía o algo falló
                         let storedUser = localStorage.getItem('user_' + user.uid);
-                        datosUsuarioLogueado = storedUser ? JSON.parse(storedUser) : { nombre: user.email, rol: "Usuario" };
+                        datosUsuarioLogueado = storedUser ? JSON.parse(storedUser) : { nombre: user.displayName || (user.email ? user.email.split('@')[0] : 'Usuario'), rol: "Usuario" };
                     }
                 } catch (e) {
                     console.error("Error obteniendo el rol del usuario", e);
                     let storedUser = localStorage.getItem('user_' + user.uid);
-                    datosUsuarioLogueado = storedUser ? JSON.parse(storedUser) : { nombre: user.email, rol: "Usuario (Offline)" };
+                    datosUsuarioLogueado = storedUser ? JSON.parse(storedUser) : { nombre: user.displayName || (user.email ? user.email.split('@')[0] : 'Usuario'), rol: "Usuario (Offline)" };
                 }
 
                 document.getElementById('infoUsuarioActual').innerText = `${datosUsuarioLogueado.rol}: ${datosUsuarioLogueado.nombre}`;
@@ -365,14 +366,19 @@
                 document.getElementById('sec-login').classList.add('hidden');
                 document.getElementById('menuNavegacion').classList.remove('hidden');
 
-                if (datosUsuarioLogueado.rol === "Monitor") {
-                    document.getElementById('tab-historial').classList.add('hidden');
-                    document.getElementById('tab-resumen').classList.add('hidden');
-                    document.getElementById('tab-admin').classList.add('hidden');
-                } else {
+                // Lógica de visualización de pestañas por rol
+                if (datosUsuarioLogueado.rol === "Administrador") {
                     document.getElementById('tab-historial').classList.remove('hidden');
                     document.getElementById('tab-resumen').classList.remove('hidden');
                     document.getElementById('tab-admin').classList.remove('hidden');
+                } else if (datosUsuarioLogueado.rol === "Docente") {
+                    document.getElementById('tab-historial').classList.remove('hidden');
+                    document.getElementById('tab-resumen').classList.remove('hidden');
+                    document.getElementById('tab-admin').classList.add('hidden');
+                } else { // Monitor o genérico
+                    document.getElementById('tab-historial').classList.add('hidden');
+                    document.getElementById('tab-resumen').classList.add('hidden');
+                    document.getElementById('tab-admin').classList.add('hidden');
                 }
                 
                 cargarGradosDisponibles();
@@ -404,21 +410,21 @@
 
         window.cerrarSesion = () => signOut(auth);
 
-        // 🎯 LÓGICA DE VALIDACIÓN DEL ADMIN
+        // 🎯 VALIDACIÓN RESTRINGIDA AL ADMINISTRADOR
         window.verificarAccesoAdmin = () => {
-            if (datosUsuarioLogueado && datosUsuarioLogueado.rol === "Docente") {
+            if (datosUsuarioLogueado && datosUsuarioLogueado.rol === "Administrador") {
                 mostrarSeccion('admin');
             } else {
-                showToast("Acceso denegado. Se requieren permisos de Docente.", "error");
+                showToast("Acceso denegado. Se requiere rol de Administrador.", "error");
             }
         };
 
         window.crearUsuario = async (e) => {
             e.preventDefault();
             
-            // Reemplazamos el prompt por validación de rol
-            if (!datosUsuarioLogueado || datosUsuarioLogueado.rol !== "Docente") {
-                return showToast("Acceso denegado. Solo los Docentes pueden crear usuarios.", "error");
+            // Validamos que solo Administradores puedan crear cuentas
+            if (!datosUsuarioLogueado || datosUsuarioLogueado.rol !== "Administrador") {
+                return showToast("Acceso denegado. Solo los Administradores pueden crear usuarios.", "error");
             }
 
             const email = document.getElementById('nuevoEmail').value;
@@ -433,7 +439,6 @@
                 const userCredential = await createUserWithEmailAndPassword(adminAuth, email, pass);
                 const nuevoUsuario = userCredential.user;
                 
-                // Guardamos el nuevo usuario en Firestore para que la app sepa su rol al iniciar sesión
                 await setDoc(doc(db, "usuarios", nuevoUsuario.uid), {
                     nombre: nombre,
                     email: email,
@@ -441,7 +446,6 @@
                     creado_en: serverTimestamp()
                 });
 
-                // Lo mantenemos en Apps Script temporalmente si aún lo usabas para historial viejo
                 const payload = { action: 'addUsuario', uid: nuevoUsuario.uid, nombre: nombre, email: email, rol: rol };
                 fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) }).catch(e=>console.log(e));
 
@@ -459,6 +463,10 @@
         window.mostrarSeccion = (seccion) => {
             if (datosUsuarioLogueado && datosUsuarioLogueado.rol === "Monitor" && seccion !== "asistencia") {
                 showToast("Acceso denegado. Permisos limitados.", "error");
+                return;
+            }
+            if (datosUsuarioLogueado && datosUsuarioLogueado.rol === "Docente" && seccion === "admin") {
+                showToast("Acceso denegado. Solo Administradores.", "error");
                 return;
             }
 
@@ -989,9 +997,9 @@
             
             if (!fileInput.files[0]) return showToast("Selecciona un archivo Excel.", "error");
             
-            // Reemplazamos el prompt por validación de rol
-            if (!datosUsuarioLogueado || datosUsuarioLogueado.rol !== "Docente") {
-                return showToast("Acceso denegado. Solo los Docentes pueden importar listas.", "error");
+            // Validamos que solo Administradores puedan importar listas
+            if (!datosUsuarioLogueado || datosUsuarioLogueado.rol !== "Administrador") {
+                return showToast("Acceso denegado. Solo los Administradores pueden importar listas.", "error");
             }
             
             btn.disabled = true; btn.innerHTML = "Procesando...";
