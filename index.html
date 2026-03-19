@@ -181,6 +181,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        // Importación de Firestore
+        import { getFirestore, collection, addDoc, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCm3ApxABTJJdk__pDUYANPkAb2AgbWmbA",
@@ -196,6 +198,8 @@
         const auth = getAuth(app);
         const adminApp = initializeApp(firebaseConfig, "adminApp");
         const adminAuth = getAuth(adminApp);
+        // Inicialización de Firestore
+        const db = getFirestore(app);
 
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx49cMrsuYeMD_k_yz1do7Q0iwoSdtHeJYZaEqQXdiayVpnVeNonIbSnkD2KLtc5mmg/exec"; 
 
@@ -281,6 +285,24 @@
                             body: JSON.stringify(item)
                         });
                         if (!response.ok) throw new Error("Fallo de conexión");
+                        
+                        // Si era un reporte offline que se guardó ahora, respaldarlo en Firestore
+                        if (item.action === 'addReporte') {
+                            try {
+                                await addDoc(collection(db, "reportes_backup"), {
+                                    fecha: item.fecha,
+                                    fecha_f: item.fecha_f,
+                                    hora_f: item.hora_f,
+                                    grado: item.grado,
+                                    ausentes: item.ausentes,
+                                    tardanzas: item.tardanzas,
+                                    total: item.total,
+                                    total_tardanzas: item.total_tardanzas,
+                                    tomado_por: item.tomado_por,
+                                    timestamp: serverTimestamp()
+                                });
+                            } catch (fsErr) { console.error("Error al sincronizar backup Firestore", fsErr); }
+                        }
                     } catch (e) {
                         failedQueue.push(item);
                     }
@@ -624,6 +646,26 @@
                         body: JSON.stringify(payload) 
                     });
                     if (!response.ok) throw new Error("Fallo en servidor");
+
+                    // LOGICA BACKUP FIRESTORE REPORTES
+                    try {
+                        await addDoc(collection(db, "reportes_backup"), {
+                            fecha: payload.fecha,
+                            fecha_f: payload.fecha_f,
+                            hora_f: payload.hora_f,
+                            grado: payload.grado,
+                            ausentes: payload.ausentes,
+                            tardanzas: payload.tardanzas,
+                            total: payload.total,
+                            total_tardanzas: payload.total_tardanzas,
+                            tomado_por: payload.tomado_por,
+                            timestamp: serverTimestamp()
+                        });
+                        console.log("Backup de reporte enviado a Firestore");
+                    } catch (fsError) {
+                        console.error("No se pudo respaldar en Firestore: ", fsError);
+                    }
+
                     showToast("¡Reporte guardado con éxito!", "success");
                 }
                 
@@ -960,6 +1002,28 @@
                 });
 
                 if (!response.ok) throw new Error("Fallo de red");
+
+                // LÓGICA DE BACKUP FIRESTORE PARA ESTUDIANTES
+                try {
+                    const backupPromises = aInsertar.map(est => {
+                        // En caso de que codigo_zipgrade venga vacío, prevenimos un error usando un identificador temporal
+                        const docId = est.codigo_zipgrade || `SIN_ID_${est.nombre.replace(/\s+/g, '_')}`;
+                        const docRef = doc(db, "estudiantes", docId);
+                        
+                        // Utilizamos setDoc con merge:true para actualizar sin duplicar
+                        return setDoc(docRef, {
+                            nombre: est.nombre,
+                            grado: est.grado,
+                            codigo_zipgrade: est.codigo_zipgrade,
+                            actualizado_en: serverTimestamp()
+                        }, { merge: true });
+                    });
+                    
+                    await Promise.all(backupPromises);
+                    console.log("Respaldo de estudiantes sincronizado con Firestore exitosamente.");
+                } catch (fsError) {
+                    console.error("Error al procesar el backup de estudiantes en Firestore:", fsError);
+                }
 
                 showToast(`¡Se procesaron ${aInsertar.length} estudiantes correctamente!`, "success");
                 cacheGrados = []; cacheEstudiantes = {}; localStorage.removeItem('db_estudiantes_cache');
